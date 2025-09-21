@@ -7,7 +7,7 @@ import uuid
 from typing import Optional, List, Dict, Any
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage
 from langgraph.graph.state import CompiledStateGraph
-
+from typing import Generator
 from .streaming import stream_response
 from agent.state import AgentState
 from .logger import logger
@@ -104,6 +104,53 @@ def get_conversation_summary(messages: List[BaseMessage]) -> Dict[str, Any]:
             summary["tool_messages"] += 1
     
     return summary
+
+
+from langchain_core.messages import AIMessageChunk
+
+def stream_interaction(
+    user_input: str,
+    thread_id: str,
+    user_id: str,
+    app: CompiledStateGraph[AgentState, None, AgentState, AgentState]
+) -> Generator[str, None, None]:
+    """
+    Stream an interaction with the agent, yielding token-by-token chunks.
+    """
+    logger.debug(f"\n--- User input: {user_input} ---")
+
+    initial_message = HumanMessage(content=user_input, name="user")
+    initial_state = {
+        "messages": [initial_message],
+        "next_action": "respond",
+        "actions": []
+    }
+
+    try:
+        stream_gen = app.stream(
+            input=initial_state,
+            context={"user_id": user_id},
+            config={
+                "configurable": {"thread_id": thread_id},
+                "metadata": {"user_id": user_id},
+            },
+            stream_mode="messages",  # 🔥 this gives AIMessageChunk
+        )
+
+        for step in stream_gen:
+            logger.debug(f"[Step received]: {step}")
+
+            # step[0] is usually the chunk
+            chunk = step[0]
+            if isinstance(chunk, AIMessageChunk):
+                if chunk.content:  # only yield if there's new text
+                    yield chunk.content
+
+        yield "[END]\n"
+
+    except Exception as e:
+        logger.debug(f"❌ Error during interaction: {repr(e)}")
+        yield f"[ERROR]: {str(e)}\n"
 
 
 def run_single_interaction(user_input: str, thread_id: str, user_id:str, app: CompiledStateGraph[AgentState, None, AgentState, AgentState]) -> bool:

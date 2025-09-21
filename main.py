@@ -6,19 +6,25 @@ from fastapi.responses import JSONResponse
 import logging
 import time
 from contextlib import asynccontextmanager
-from core.database import initialize_database
+from utils.database import initialize_database
 from core import constants
 from core.exceptions import CustomException
-from api.auth.router import auth_router, get_auth_service
+from api.auth.router import auth_router
 from api.memories.router import memories_router
+from api.chat.router import chat_router
 from api.middleware.AuthMiddleware import AuthMiddleware
+from support_agent import Agent
+from config.settings import load_config
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
-    initialize_database()
+    db_conn = initialize_database()
+    load_config()
+    app.state.agent = Agent(db_conn)
+    
     logging.info("🚀 Application startup complete")
     
     yield
@@ -39,22 +45,27 @@ app = FastAPI(
 
 # Add middleware
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[constants.FRONTEND_URL],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=[
         "localhost",
-        "localhost:8000",
+        "http://localhost:8000",
+        "http://localhost:5500",
         "127.0.0.1",
         "127.0.0.1:8000",
+        "127.0.0.1:5500",
         constants.FRONTEND_URL
     ]
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        constants.FRONTEND_URL,
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.middleware("http")
@@ -90,3 +101,4 @@ async def custom_exception_handler(request: Request, exc: CustomException):
 # Include API router
 app.include_router(auth_router, prefix="/api")
 app.include_router(memories_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")

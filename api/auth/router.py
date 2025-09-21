@@ -1,7 +1,7 @@
 # app/auth/router.py
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
-from core.database import get_db
+from utils.database import get_db
 from .service import AuthService
 from .dto.dto import RegisterRequest, LoginRequest
 
@@ -18,6 +18,7 @@ def register(
     response: Response,
     service: AuthService = Depends(get_auth_service)
 ):
+    print("hererererererere")
     user = service.register_user(
         username=data.username,
         email=data.email,

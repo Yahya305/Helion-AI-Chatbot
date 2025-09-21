@@ -16,10 +16,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         # Skip unprotected routes
-        if request.url.path in ["/api/auth/login", "/api/auth/register"]:
+        if (
+        request.method == "OPTIONS" or
+        request.url.path in ["/api/auth/login", "/api/auth/register"]
+        ):
+            print("allowed")
             return await call_next(request)
 
+        print("In auth middleware", request.url.path)
         access_token = request.cookies.get("access_token")
+        print("Access Token", access_token)
 
         # ✅ Open a session for this request
         db = SessionLocal()
@@ -28,6 +34,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         try:
             # ✅ Try normal access token verification
             user_info = auth_service.verify_access_token(access_token)
+            print(user_info)
             request.state.user = user_info
             logger.debug(f"User info from token: {user_info}")
             return await call_next(request)

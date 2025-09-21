@@ -6,7 +6,7 @@ from langgraph.graph import StateGraph, START, END
 
 from .state import AgentState
 from .nodes import agent_node, agent_node_with_streaming, tool_node, decide_next_step
-from config import get_streaming_config
+# from config import get_streaming_config
 from psycopg import Connection
 from langgraph.checkpoint.postgres import PostgresSaver
 
@@ -21,8 +21,9 @@ def create_agent_workflow(db_connection: Connection):
         Compiled LangGraph application
     """
     # Get streaming configuration
-    streaming_config = get_streaming_config()
-    use_streaming = streaming_config.get("enabled", True)
+    # streaming_config = get_streaming_config()
+    # use_streaming = streaming_config.get("enabled", True)
+    use_streaming = True
     
     # Create the workflow
     workflow = StateGraph(AgentState)

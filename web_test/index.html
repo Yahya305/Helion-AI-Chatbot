@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Agent Chat Stream</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                padding: 2rem;
+                background: #f4f4f4;
+            }
+            .card {
+                background: white;
+                border: 1px solid #ddd;
+                padding: 1rem;
+                border-radius: 8px;
+                margin-bottom: 1rem;
+                max-width: 400px;
+            }
+            #chat-box {
+                background: white;
+                border: 1px solid #ddd;
+                padding: 1rem;
+                border-radius: 8px;
+                height: 300px;
+                overflow-y: auto;
+                white-space: pre-wrap;
+            }
+            input,
+            button {
+                padding: 0.5rem;
+                font-size: 1rem;
+                margin-top: 0.5rem;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            button {
+                cursor: pointer;
+            }
+            #chat-section {
+                display: none; /* hidden until login */
+            }
+            .msg {
+                margin-top: 0.5rem;
+                font-size: 0.9rem;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Agent Chat (Streaming)</h1>
+
+        <!-- Register Form -->
+        <div class="card" id="register-card">
+            <h2>Register</h2>
+            <input type="text" id="reg-username" placeholder="Username" />
+            <input type="email" id="reg-email" placeholder="Email" />
+            <input type="password" id="reg-password" placeholder="Password" />
+            <button onclick="register()">Register</button>
+            <div class="msg" id="reg-msg"></div>
+        </div>
+
+        <!-- Login Form -->
+        <div class="card" id="login-card">
+            <h2>Login</h2>
+            <input type="email" id="login-email" placeholder="Email" />
+            <input type="password" id="login-password" placeholder="Password" />
+            <button onclick="login()">Login</button>
+            <div class="msg" id="login-msg"></div>
+        </div>
+
+        <!-- Chat Section -->
+        <div id="chat-section">
+            <div id="chat-box"></div>
+            <input
+                type="text"
+                id="user-input"
+                placeholder="Type your message..."
+                size="40"
+            />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+
+        <script>
+            // Run this when the page loads
+            window.addEventListener("DOMContentLoaded", () => {
+                const isLoggedIn = localStorage.getItem("isLoggedIn");
+                if (isLoggedIn === "true") {
+                    // User was logged in → hide auth, show chat
+                    document.getElementById("register-card").style.display =
+                        "none";
+                    document.getElementById("login-card").style.display =
+                        "none";
+                    document.getElementById("chat-section").style.display =
+                        "block";
+                }
+            });
+
+            async function register() {
+                const username = document
+                    .getElementById("reg-username")
+                    .value.trim();
+                const email = document.getElementById("reg-email").value.trim();
+                const password = document.getElementById("reg-password").value;
+
+                const msgEl = document.getElementById("reg-msg");
+                msgEl.textContent = "";
+
+                try {
+                    const res = await fetch(
+                        "http://localhost:8000/api/auth/register",
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({ username, email, password }),
+                        }
+                    );
+
+                    const data = await res.json();
+                    if (!res.ok) {
+                        msgEl.style.color = "crimson";
+                        msgEl.textContent =
+                            data.detail || "Registration failed";
+                        return;
+                    }
+
+                    msgEl.style.color = "green";
+                    msgEl.textContent = `Registered as ${data.username}. You can now login.`;
+                } catch (err) {
+                    msgEl.style.color = "crimson";
+                    msgEl.textContent = "Network error.";
+                    console.error(err);
+                }
+            }
+
+            async function login() {
+                const email = document
+                    .getElementById("login-email")
+                    .value.trim();
+                const password =
+                    document.getElementById("login-password").value;
+
+                const msgEl = document.getElementById("login-msg");
+                msgEl.textContent = "";
+
+                try {
+                    const res = await fetch(
+                        "http://localhost:8000/api/auth/login",
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({ email, password }),
+                        }
+                    );
+
+                    const data = await res.json();
+                    if (!res.ok) {
+                        msgEl.style.color = "crimson";
+                        msgEl.textContent = data.detail || "Login failed";
+                        return;
+                    }
+
+                    msgEl.style.color = "green";
+                    msgEl.textContent = `Welcome ${data.username}!`;
+
+                    // ✅ Save login flag
+                    localStorage.setItem("isLoggedIn", "true");
+
+                    // Hide auth forms, show chat
+                    document.getElementById("register-card").style.display =
+                        "none";
+                    document.getElementById("login-card").style.display =
+                        "none";
+                    document.getElementById("chat-section").style.display =
+                        "block";
+                } catch (err) {
+                    msgEl.style.color = "crimson";
+                    msgEl.textContent = "Network error.";
+                    console.error(err);
+                }
+            }
+
+            async function sendMessage() {
+                const input = document.getElementById("user-input");
+                const chatBox = document.getElementById("chat-box");
+
+                const userText = input.value.trim();
+                if (!userText) return;
+
+                chatBox.innerHTML += `\n🧑: ${userText}\n🤖: `;
+
+                input.value = "";
+
+                const response = await fetch(
+                    "http://localhost:8000/api/chat/send",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ user_input: userText }),
+                        credentials: "include", // send cookie
+                    }
+                );
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = ""; // 🔑 accumulate text between reads
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+
+                    // 🔥 Update chat box progressively
+                    chatBox.innerHTML += buffer;
+                    buffer = ""; // clear after writing
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+
+                // flush any remaining
+                buffer += decoder.decode();
+                if (buffer) {
+                    chatBox.innerHTML += buffer;
+                }
+
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        </script>
+    </body>
+</html>

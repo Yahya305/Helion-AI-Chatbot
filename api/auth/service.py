@@ -60,7 +60,7 @@ class AuthService:
             httponly=True,
             max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             secure=False,  # set True in production HTTPS
-            samesite="lax",
+            samesite="none",
         )
 
         return new_user
@@ -82,8 +82,8 @@ class AuthService:
             value=access_token,
             httponly=True,
             max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            secure=False,  # set True in production HTTPS
-            samesite="lax",
+            secure=True,  # set True in production HTTPS
+            samesite="none",
         )
 
         return user

@@ -65,7 +65,7 @@ def agent_node(state: AgentState) -> AgentState:
        # Extract clean final answer for display
         clean_answer = extract_final_answer(response.content)
         # Create a new AIMessage with just the clean answer
-        clean_response = AIMessage(content=clean_answer)
+        clean_response = AIMessage(content=clean_answer, name="agent")
         return {
             "messages": [clean_response],
             "next_action": "respond"

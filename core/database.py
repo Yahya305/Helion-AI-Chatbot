@@ -110,6 +110,8 @@ def initialize_database():
             """))
 
         logger.info("PostgreSQL database initialized with pgvector + semantic_memories")
+
+        return conn
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
         raise

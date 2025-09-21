@@ -1,7 +1,7 @@
 # memories/router.py
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from core.database import get_db
+from utils.database import get_db
 from .service import MemoryService
 from .dto.dto import MemoryCreateRequest, MemorySearchRequest, SemanticMemoryDTO
 

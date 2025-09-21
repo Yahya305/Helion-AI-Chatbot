@@ -7,7 +7,7 @@ Provides web search capabilities for finding up-to-date information.
 from langchain_core.tools import tool
 # from langchain_community.tools.tavily_search import TavilySearchResults
 # from utils.logger import logger
-from config.settings import get_config
+from core.constants import FIRECRAWL_API_KEY
 from firecrawl import FirecrawlApp
 from typing import Dict
 
@@ -41,7 +41,7 @@ def web_search(query: str) -> Dict:
         }
     """
     try:
-        app = FirecrawlApp(api_key=get_config('firecrawl_api_key'))
+        app = FirecrawlApp(api_key=FIRECRAWL_API_KEY)
         
         response = app.search(
             query=query,
