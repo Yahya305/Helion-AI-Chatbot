@@ -18,6 +18,7 @@ class ChatService:
     def send_message(self, message: ChatMessageDTO, user_id: str):
         thread_id = message.thread_id or str(uuid4())
 
+        return "Helloo"
 
         return self.agent.invoke(
             user_input=message.user_input,

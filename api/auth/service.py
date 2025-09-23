@@ -4,8 +4,14 @@ from fastapi import HTTPException, status, Response
 from passlib.context import CryptContext
 from models import User, UserSession
 from datetime import datetime, timedelta, timezone
-from core.constants import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET
+from core.constants import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    REFRESH_TOKEN_EXPIRE_DAYS,
+    ACCESS_TOKEN_SECRET,
+    REFRESH_TOKEN_SECRET,
+)
 import jwt
+import uuid
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -21,10 +27,6 @@ class AuthService:
         return pwd_context.verify(plain_password, password)
 
     def register_user(self, username: str, email: str, password: str, response: Response) -> User:
-        """
-        Register a new user, create tokens, set access_token in cookie,
-        and store refresh_token in DB.
-        """
         existing = (
             self.db.query(User)
             .filter((User.username == username) | (User.email == email))
@@ -44,31 +46,24 @@ class AuthService:
         self.db.add(new_user)
         self.db.commit()
         self.db.refresh(new_user)
-        
-        print("herhehejhere")
-        print(new_user.id)
 
         # --- Create tokens ---
         access_token = self.create_access_token(new_user)
         self.create_refresh_token(new_user)
 
-
-        # Set access token in httpOnly cookie
+        # --- Set access token cookie (lives 30 days, token inside still 15min) ---
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            secure=False,  # set True in production HTTPS
+            max_age=60 * 60 * 24 * 30,  # 30 days
+            secure=True,  # enable in production (HTTPS)
             samesite="none",
         )
 
         return new_user
-    
+
     def authenticate_user(self, email: str, password: str, response: Response) -> User | None:
-        """
-        Authenticate user and issue tokens.
-        """
         user = self.db.query(User).filter(User.email == email).first()
         if not user or not self.verify_password(password, user.password):
             return None
@@ -76,18 +71,17 @@ class AuthService:
         access_token = self.create_access_token(user)
         self.create_refresh_token(user)
 
-        # Set access token cookie
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            secure=True,  # set True in production HTTPS
+            max_age=60 * 60 * 24 * 30,  # 30 days
+            secure=True,
             samesite="none",
         )
 
         return user
-    
+
     def create_access_token(self, user: User) -> str:
         payload = {
             "userId": str(user.id),
@@ -97,32 +91,29 @@ class AuthService:
         }
         token = jwt.encode(payload, ACCESS_TOKEN_SECRET, algorithm="HS256")
         return token
-    
+
     def create_refresh_token(self, user: User) -> UserSession:
         expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
         payload = {"userId": str(user.id), "exp": expires_at}
         token = jwt.encode(payload, REFRESH_TOKEN_SECRET, algorithm="HS256")
 
-        # Check if a session exists for this user + device
         session = (
             self.db.query(UserSession)
             .filter(
                 UserSession.user_id == user.id,
-                UserSession.ip_address == "127.0.0.1",  # mock
-                UserSession.user_agent == "mock-agent"  # mock
+                UserSession.ip_address == "127.0.0.1",  # TODO: extract from request
+                UserSession.user_agent == "mock-agent",  # TODO: extract from headers
             )
             .first()
         )
 
         if session:
-            # Update existing session
             session.refresh_token = token
             session.expires_at = expires_at
             session.is_valid = True
             self.db.commit()
             self.db.refresh(session)
         else:
-            # Create a new session
             session = UserSession(
                 user_id=user.id,
                 refresh_token=token,
@@ -136,11 +127,15 @@ class AuthService:
             self.db.refresh(session)
 
         return session
-    
+
     def verify_access_token(self, token: str) -> dict:
         try:
             payload = jwt.decode(token, ACCESS_TOKEN_SECRET, algorithms=["HS256"])
-            return {"userId": payload["userId"], "username": payload["username"], "email": payload["email"]}
+            return {
+                "userId": payload["userId"],
+                "username": payload["username"],
+                "email": payload["email"],
+            }
         except jwt.ExpiredSignatureError:
             raise jwt.ExpiredSignatureError("Access token expired")
         except jwt.PyJWTError:
@@ -154,27 +149,25 @@ class AuthService:
         except jwt.PyJWTError:
             return None
 
-        session = self.db.query(UserSession).filter(
-            UserSession.refresh_token == token,
-            UserSession.is_valid == True,
-            UserSession.expires_at > datetime.now(timezone.utc),
-        ).first()
+        session = (
+            self.db.query(UserSession)
+            .filter(
+                UserSession.refresh_token == token,
+                UserSession.is_valid == True,
+                UserSession.expires_at > datetime.now(timezone.utc),
+            )
+            .first()
+        )
 
         if not session:
             return None
 
-        # Lazy load user for convenience
         session.user = self.db.query(User).filter(User.id == session.user_id).first()
         return session
 
     def fetch_user_session(self, user_id: str) -> UserSession | None:
-        """Fetch the most recent valid session for a user"""
-        session = (
+        return (
             self.db.query(UserSession)
-            .filter(
-                UserSession.user_id == user_id,
-                UserSession.is_valid == True
-            )
+            .filter(UserSession.user_id == user_id, UserSession.is_valid == True)
             .first()
         )
-        return session

@@ -1,3 +1,4 @@
+# app/auth/middleware.py
 import jwt
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -5,42 +6,37 @@ from fastapi.responses import JSONResponse
 from api.auth.service import AuthService
 from jwt import ExpiredSignatureError
 from core.database import SessionLocal
-from datetime import timedelta
 from utils.logger import logger
-from core.constants import ACCESS_TOKEN_EXPIRE_MINUTES, ACCESS_TOKEN_SECRET
+from core.constants import ACCESS_TOKEN_SECRET
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app):
-        super().__init__(app)
-
     async def dispatch(self, request: Request, call_next):
-        # Skip unprotected routes
-        if (
-        request.method == "OPTIONS" or
-        request.url.path in ["/api/auth/login", "/api/auth/register"]
-        ):
-            print("allowed")
+        if request.method == "OPTIONS" or request.url.path in [
+            "/api/auth/login",
+            "/api/auth/register",
+        ]:
+            # logger.debug(f"Skipping auth for path: {request.url.path}")
             return await call_next(request)
 
-        print("In auth middleware", request.url.path)
         access_token = request.cookies.get("access_token")
-        print("Access Token", access_token)
+        if not access_token:
+            # logger.debug("No access token found in cookies.")
+            return JSONResponse({"detail": "Unauthorized"}, status_code=401)
 
-        # ✅ Open a session for this request
         db = SessionLocal()
         auth_service = AuthService(db)
 
         try:
-            # ✅ Try normal access token verification
+            # Normal validation
             user_info = auth_service.verify_access_token(access_token)
-            print(user_info)
+            # logger.info(f"Access token valid for user: {user_info.get('userId')}")
             request.state.user = user_info
-            logger.debug(f"User info from token: {user_info}")
             return await call_next(request)
 
         except ExpiredSignatureError:
-            # ✅ Decode expired token to extract user_id
+            # logger.info("Access token expired. Attempting refresh...")
+
             try:
                 payload = jwt.decode(
                     access_token,
@@ -49,46 +45,46 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     options={"verify_exp": False},  # ignore expiration
                 )
                 user_id = payload.get("userId")
-                logger.debug("User ID from expired token:", user_id)
+                # logger.debug(f"Decoded expired token for userId: {user_id}")
             except Exception as e:
-                logger.debug(f"Error decoding tokkken: {e}")
+                logger.error(f"Failed to decode expired token: {e}")
                 return JSONResponse({"detail": "Unauthorized"}, status_code=401)
 
-            # ✅ Fetch refresh session for this user
             session = auth_service.fetch_user_session(user_id)
             if not session:
+                logger.warning(f"No session found for userId: {user_id}")
                 return JSONResponse({"detail": "Unauthorized"}, status_code=401)
 
-            refresh_token = session.refresh_token
-            logger.debug("Refreshing session:")
-            refreshed_session = auth_service.verify_refresh_token(refresh_token)
+            refreshed_session = auth_service.verify_refresh_token(session.refresh_token)
+            if not refreshed_session:
+                logger.warning(f"Invalid refresh token for userId: {user_id}")
+                return JSONResponse({"detail": "Unauthorized"}, status_code=401)
 
-            if refreshed_session:
-                new_access_token = auth_service.create_access_token(refreshed_session.user)
-                request.state.user = {
-                    "userId": str(refreshed_session.user.id),
-                    "username": refreshed_session.user.username,
-                    "email": refreshed_session.user.email,
-                }
+            # Issue new short-lived access token
+            new_access_token = auth_service.create_access_token(refreshed_session.user)
+            # logger.info(f"Issued new access token for userId: {user_id}")
 
-                # Get downstream response
-                response = await call_next(request)
+            request.state.user = {
+                "userId": str(refreshed_session.user.id),
+                "username": refreshed_session.user.username,
+                "email": refreshed_session.user.email,
+            }
 
-                # ✅ Set new access token cookie
-                response.set_cookie(
-                    "access_token",
-                    new_access_token,
-                    httponly=True,
-                    max_age=int(timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES).total_seconds()),
-                )
-                return response
+            response = await call_next(request)
+            response.set_cookie(
+                "access_token",
+                new_access_token,
+                httponly=True,
+                max_age=60 * 60 * 24 * 30,  # cookie valid for 30 days
+                secure=True,
+                samesite="none",
+            )
+            # logger.debug("Updated access_token cookie in response.")
+            return response
 
-            logger.debug("No Existing Session Found...")
-            return JSONResponse({"detail": "Unauthorized"}, status_code=401)
-
-        except Exception:
+        except Exception as e:
+            # logger.debug(f"Unexpected error in AuthMiddleware: {e}")
             return JSONResponse({"detail": "Unauthorized"}, status_code=401)
 
         finally:
-            # ✅ Always close DB session
             db.close()
