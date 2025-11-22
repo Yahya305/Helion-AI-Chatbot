@@ -28,7 +28,7 @@ class ToolRegistry:
             self.register_tool(tool, tool.description)
 
         # self.get_tool("store_memory").invoke('{"content": "User Saim likes Football", "importance": "medium"}')
-        # self.get_tool("retrieve_memory").invoke('{"query": "user\'s name", "user_id": "Yahya"}')
+        # self.get_tool("retrieve_memory").invoke('{"query": "my name"}')
         self.register_tool(web_search, "Web search for finding current information and external facts")
         self.register_tool(get_date_and_time, "Provides current date and time information")
         self.register_tool(get_weather, "Provides current weather information in a city")

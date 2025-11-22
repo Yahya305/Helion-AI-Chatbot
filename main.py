@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 import logging
 import time
 from contextlib import asynccontextmanager
-from utils.database import initialize_database
+from core.database import initialize_database
 from core import constants
 from core.exceptions import CustomException
 from api.auth.router import auth_router

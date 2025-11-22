@@ -5,7 +5,7 @@ from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from utils.database import get_psycopg_db_connection
+from core.database import get_psycopg_db_connection
 from utils.logger import logger
 from langgraph.runtime import get_runtime
 from dataclasses import dataclass
@@ -324,8 +324,6 @@ class SemanticMemoryTools:
                 
                 runtime = get_runtime(ContextSchema)
                 user_id= runtime.context['user_id']
-
-
 
                 # Validate input using separate validation function
                 parsed_data, error_msg = memory_tools._validate_retrieve_memory_input(input_data)

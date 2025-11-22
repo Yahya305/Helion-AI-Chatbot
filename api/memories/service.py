@@ -1,7 +1,7 @@
 # memories/service.py
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from utils.database import get_orm_session
+from core.database import get_orm_session
 from models import SemanticMemory
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import func, text
