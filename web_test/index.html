@@ -192,7 +192,7 @@
 
                     
                     const chunk = decoder.decode(value, { stream: true });
-                    // console.log(chunk,"-=-=-=-")
+                    console.log(chunk,"-=-=-=-")
                     fullContent += chunk;
 
                     // Check if we've reached "Final Answer:" in the accumulated content
@@ -210,10 +210,10 @@
                         let answerContent = parts[parts.length - 1];
                         
                         // Remove [END] marker and any trailing "Thought:" patterns
-                        console.log(answerContent,"---",answerContent
-                            .replace(/\[END\].*$/s, '')
-                            .split(/\nThought:/)[0]
-                            .trim())
+                        // console.log(answerContent,"---",answerContent
+                        //     .replace(/\[END\].*$/s, '')
+                        //     .split(/\nThought:/)[0]
+                        //     .trim())
                         answerContent = answerContent
                             .replace(/\[END\].*$/s, '')
                             .split(/\nThought:/)[0]

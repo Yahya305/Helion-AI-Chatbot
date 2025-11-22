@@ -41,6 +41,8 @@ def stream_response2(llm_with_tools:Runnable[PromptValue | str | Sequence[BaseMe
         clean_answer = extract_final_answer(streamed_content)
         ai_message = AIMessage(content=clean_answer, name="agent")
         return ai_message
+    else:
+        return AIMessage(content=streamed_content, name="agent")
 
 def stream_response(content: str, delay: Optional[float] = None) -> None:
     """

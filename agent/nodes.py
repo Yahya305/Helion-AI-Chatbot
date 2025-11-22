@@ -73,72 +73,45 @@ def agent_node(state: AgentState) -> AgentState:
 
 
 def agent_node_with_streaming(state: AgentState) -> AgentState:
-    """
-    Agent node that streams the final response in real-time.
-    
-    Args:
-        state: Current agent state
-        
-    Returns:
-        Updated agent state with streamed response
-    """
     from .runnable import get_llm_with_tools, get_agent_prompt
     from .runnable import get_chat_history, get_current_input, get_agent_scratchpad
 
-    
-    agent_runnable = get_agent_runnable()
     tools = get_all_tools()
+    llm_with_tools = get_llm_with_tools()
+    agent_prompt = get_agent_prompt()
 
-    
-    # Check if this should be a final response (no tool calls needed)
-    temp_response = agent_runnable.invoke(state)
-    action_info = parse_action_from_response(temp_response.content)
-    
+    # Build enhanced state
+    enhanced_state = {
+        "messages": state["messages"],
+        "tools": tools,
+        "tool_names": [t.name for t in tools],
+        "input": get_current_input(state["messages"]),
+        "chat_history": get_chat_history(state["messages"]),
+        "agent_scratchpad": get_agent_scratchpad(state["messages"]),
+    }
+
+    # Format final prompt sent to LLM (ReAct)
+    formatted_prompt = agent_prompt.invoke(enhanced_state)
+
+    # 🚀 STREAM the final LLM response
+    ai_message = stream_response2(llm_with_tools, formatted_prompt)
+
+    # 🚨 Detect tool call from streamed text (only 1 pass!)
+    action_info = parse_action_from_response(ai_message.content)
+
     if action_info:
-        # Tool call needed - no streaming, just return normally
-        logger.debug("\n--- AGENT DECIDED TO CALL A TOOL ---")
-        return {
-            "messages": [temp_response],
-            "next_action": "call_tool", 
-            "actions": [action_info]
-        }
-    else:
-        # Final response - stream it!
-        logger.debug("\n--- AGENT RESPONDING (STREAMING) ---")
-        logger.info("Agent: ", end='', flush=True)
-
-        try:
-            # Create the enhanced state for streaming
-            enhanced_state = {
-                "messages": state["messages"],
-                "tools": tools,
-                "tool_names": [t.name for t in tools],
-                "input": get_current_input(state["messages"]),
-                "chat_history": get_chat_history(state["messages"]),
-                "agent_scratchpad": get_agent_scratchpad(state["messages"])
-            }
-            buffer = ""
-            # Format with the prompt
-            agent_prompt = get_agent_prompt()
-            formatted_prompt = agent_prompt.invoke(enhanced_state)
-            
-            # Stream from the LLM
-            llm_with_tools = get_llm_with_tools()
-            ai_message=stream_response2(llm_with_tools, formatted_prompt)
-            
-            logger.info("")  # New line after streaming
-
-
-            
-        except Exception as e:
-            logger.debug(f"\nStreaming error: {e}")
-            # Fallback to the temp_response
-            ai_message = temp_response
-        
+        logger.debug("--- AGENT DECIDED TO CALL A TOOL ---")
         return {
             "messages": [ai_message],
-            "next_action": "respond"
+            "next_action": "call_tool",
+            "actions": [action_info]
         }
+
+    # Otherwise, final answer
+    return {
+        "messages": [ai_message],
+        "next_action": "respond"
+    }
 
 
 def tool_node(state: AgentState) -> AgentState:
