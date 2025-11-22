@@ -125,7 +125,7 @@ class SemanticMemoryTools:
         # Extract and validate fields
         query = data["query"]
         top_k = data.get("top_k", 3)
-        similarity_threshold = data.get("similarity_threshold", 0.7)
+        similarity_threshold = data.get("similarity_threshold", 0.6)
         
         # Validate query is not empty
         if not str(query).strip():
@@ -236,7 +236,6 @@ class SemanticMemoryTools:
             def _run(self, input_data: str) -> str:
                 runtime = get_runtime(ContextSchema)
                 user_id = runtime.context['user_id']
-                # user_id = "c0ca5925-c649-486f-a8a3-dd44bcd08fde"
 
                 # Validate input
                 parsed_data, error_msg = memory_tools._validate_store_memory_input(input_data)
@@ -311,9 +310,9 @@ class SemanticMemoryTools:
             Parameters:
             - query (str): Search query to find relevant memories
             - top_k (int, optional): Number of top results to return (default: 3)
-            - similarity_threshold (float, optional): Minimum similarity threshold 0.0-1.0 (default: 0.7)
+            - similarity_threshold (float, optional): Minimum similarity threshold 0.0-1.0 (default: 0.6)
 
-            Example: {"query": "search text", "top_k":"2", "similarity_threshold":"0.8"}
+            Example: {"query": "search text", "top_k":"2", "similarity_threshold":"0.6"}
             
             Use when:
             - You need context about the user's preferences or history
@@ -327,19 +326,24 @@ class SemanticMemoryTools:
                 runtime = get_runtime(ContextSchema)
                 user_id= runtime.context['user_id']
 
-                logger.debug("HEEREREREREREREERER")
+
 
                 # Validate input using separate validation function
                 parsed_data, error_msg = memory_tools._validate_retrieve_memory_input(input_data)
                 if error_msg:
                     return error_msg
-                logger.debug(user_id,parsed_data,"-------")
+                logger.debug(user_id)
                 
                 try:
                     query_embedding = memory_tools.get_embedding(parsed_data["query"], is_query=True)
 
                     
                     with memory_tools.db_connection.cursor() as cursor:
+                        logger.debug("EEREREREREREREERER")
+                        pg_vector = f"[{','.join(str(x) for x in query_embedding)}]"
+                        logger.debug(pg_vector)
+
+
                         cursor.execute("""
                             SELECT 
                                 id,
@@ -356,7 +360,7 @@ class SemanticMemoryTools:
                         
                         results = cursor.fetchall()
                         
-                        logger.debug(results,"-------")
+                        logger.debug(results)
                     
                     if not results:
                         logger.debug(f"No relevant memories found for query: {parsed_data['query']}")
