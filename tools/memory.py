@@ -295,8 +295,7 @@ class SemanticMemoryTools:
                     return f"Error storing memory: {str(e)}"
         
         return StoreMemoryTool()
-
-    
+   
     def create_retrieve_memory_tool(self) -> BaseTool:
         """Create tool for retrieving similar memories"""
         
@@ -339,7 +338,6 @@ class SemanticMemoryTools:
 
                     
                     with memory_tools.db_connection.cursor() as cursor:
-                        logger.debug("EEREREREREREREERER")
                         pg_vector = f"[{','.join(str(x) for x in query_embedding)}]"
                         logger.debug(pg_vector)
 
@@ -372,7 +370,6 @@ class SemanticMemoryTools:
                         formatted_results += f"   Content: {row['content']}\n"
                         formatted_results += f"   Stored: {row['created_at'].strftime('%Y-%m-%d %H:%M')}\n\n"
                     
-                    logger.debug("----------------",formatted_results,"--------------")
                     return formatted_results
                     
                 except Exception as e:

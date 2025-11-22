@@ -8,7 +8,6 @@ from typing import Optional, List, Dict, Any
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage
 from langgraph.graph.state import CompiledStateGraph
 from typing import Generator
-from .streaming import stream_response
 from agent.state import AgentState
 from .logger import logger
 
@@ -194,7 +193,6 @@ def run_single_interaction(user_input: str, thread_id: str, user_id:str, app: Co
                             last_msg = node_output["messages"][-1] if node_output["messages"] else None
                             if last_msg and isinstance(last_msg, AIMessage) and not final_response_streamed:
                                 # logger.info("Agent: ", end='', flush=True)
-                                # stream_response(last_msg.content)
                                 final_response_streamed = True
                                 logger.info("")  # New line after response
                         elif node_output.get("next_action") == "call_tool":

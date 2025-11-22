@@ -10,7 +10,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMe
 from .state import AgentState
 from .runnable import get_agent_runnable
 from utils.logger import logger
-from utils.streaming import stream_response2
+from utils.streaming import stream_response
 from utils.response_extractor import extract_final_answer
 from tools import get_all_tools, execute_tool
 
@@ -94,7 +94,7 @@ def agent_node_with_streaming(state: AgentState) -> AgentState:
     formatted_prompt = agent_prompt.invoke(enhanced_state)
 
     # 🚀 STREAM the final LLM response
-    ai_message = stream_response2(llm_with_tools, formatted_prompt)
+    ai_message = stream_response(llm_with_tools, formatted_prompt)
 
     # 🚨 Detect tool call from streamed text (only 1 pass!)
     action_info = parse_action_from_response(ai_message.content)
@@ -124,10 +124,7 @@ def tool_node(state: AgentState) -> AgentState:
     Returns:
         Updated agent state with tool outputs
     """
-    
-    messages = state["messages"]
     actions = state["actions"]
-    last_message = messages[-1] if messages else None
     
     logger.debug("Processing tool calls: {}", actions)
     
@@ -155,7 +152,7 @@ def tool_node(state: AgentState) -> AgentState:
         # Execute the tool
         try:
             output = execute_tool(tool_name, tool_args)
-            logger.debug("Output from {}: {}", tool_name, output)
+            logger.debug(f"Output from {tool_name}: {output}")
             tool_outputs.append(
                 ToolMessage(
                     content=output, 
@@ -163,7 +160,7 @@ def tool_node(state: AgentState) -> AgentState:
                 )
             )
         except Exception as e:
-            logger.debug("Error executing tool {}: {}", tool_name, e)
+            logger.debug(f"Error executing tool {tool_name}: {e}")
             tool_outputs.append(
                 ToolMessage(
                     content=f"Error: Failed to execute tool {tool_name}: {str(e)}", 
