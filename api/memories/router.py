@@ -1,14 +1,14 @@
 # memories/router.py
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from utils.database import get_db
+from utils.database import get_orm_session
 from .service import MemoryService
 from .dto.dto import MemoryCreateRequest, MemorySearchRequest, SemanticMemoryDTO
 
 memories_router = APIRouter(prefix="/memories", tags=["Memories"])
 
 
-def get_memory_service(db: Session = Depends(get_db)) -> MemoryService:
+def get_memory_service(db: Session = Depends(get_orm_session)) -> MemoryService:
     return MemoryService(db)
 
 

@@ -6,13 +6,9 @@ Exposes utility functions for database, conversation, and streaming operations.
 # Database utilities
 from .database import (
     initialize_database,
-    cleanup_database,
-    get_database_info,
-    vacuum_database,
-    backup_database,
-    restore_database,
+    close_psycopg_connection,
     check_database_health,
-    getDBConnection
+    get_psycopg_db_connection
 )
 
 # Conversation utilities
@@ -30,24 +26,14 @@ from .conversation import (
 # Streaming utilities
 from .streaming import (
     stream_response,
-    stream_with_typing_effect,
-    stream_with_highlights,
-    simulate_thinking_delay,
-    stream_error_message,
-    stream_system_message,
-    get_streaming_stats
 )
 
 __all__ = [
     # Database
     "initialize_database",
-    "cleanup_database", 
-    "get_database_info",
-    "vacuum_database",
-    "backup_database",
-    "restore_database",
+    "close_psycopg_connection", 
     "check_database_health",
-    "getDBConnection",
+    "get_psycopg_db_connection",
     
     # Conversation
     "generate_new_thread_id",
@@ -60,11 +46,5 @@ __all__ = [
     "get_active_threads",
     
     # Streaming
-    "stream_response",
-    "stream_with_typing_effect",
-    "stream_with_highlights",
-    "simulate_thinking_delay",
-    "stream_error_message",
-    "stream_system_message",
-    "get_streaming_stats"
+    "stream_response"
 ]

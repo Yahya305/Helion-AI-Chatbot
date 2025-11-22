@@ -1,7 +1,7 @@
 # chat/router.py
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
-from utils.database import get_db
+from utils.database import get_orm_session
 from .service import ChatService
 from support_agent import Agent
 from .dto.dto import ChatMessageDTO
@@ -14,7 +14,7 @@ def get_agent(request: Request) -> Agent:
 
 
 def get_chat_service(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_orm_session),
     agent: Agent = Depends(get_agent)
 ) -> ChatService:
     return ChatService(db, agent)

@@ -5,7 +5,7 @@ from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from utils.database import getDBConnection
+from utils.database import get_psycopg_db_connection
 from utils.logger import logger
 from langgraph.runtime import get_runtime
 from dataclasses import dataclass
@@ -38,7 +38,7 @@ class SemanticMemoryTools:
         Args:
             db_connection: PostgreSQL connection with pgvector
         """
-        self.db_connection = getDBConnection()
+        self.db_connection = get_psycopg_db_connection()
         
         # Load Nomic embedding model (768 dimensions, high quality)
         logger.debug("Loading Nomic embedding model...")

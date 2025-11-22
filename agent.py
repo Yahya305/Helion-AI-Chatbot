@@ -14,7 +14,7 @@ from utils.conversation import (
     generate_new_thread_id,
     run_single_interaction
 )
-from utils.database import initialize_database, cleanup_database
+from utils.database import initialize_database, close_psycopg_connection
 from tools import register_default_tools
 from utils.logger import logger
 
@@ -154,7 +154,7 @@ class CustomerSupportAgent:
     
     def cleanup(self):
         """Clean up resources."""
-        cleanup_database(self.db_connection)
+        close_psycopg_connection(self.db_connection)
         logger.info("Resources cleaned up.")
 
 
