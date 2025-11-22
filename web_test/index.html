@@ -38,17 +38,29 @@
                 cursor: pointer;
             }
             #chat-section {
-                display: none; /* hidden until login */
+                display: none;
             }
             .msg {
                 margin-top: 0.5rem;
                 font-size: 0.9rem;
             }
+            .loading {
+                color: #666;
+                font-style: italic;
+            }
+            @keyframes dots {
+                0%, 20% { content: '.'; }
+                40% { content: '..'; }
+                60%, 100% { content: '...'; }
+            }
+            .loading::after {
+                content: '...';
+                animation: dots 1.5s infinite;
+            }
         </style>
     </head>
     <body>
         <h1>Agent Chat (Streaming)</h1>
-
         <!-- Register Form -->
         <div class="card" id="register-card">
             <h2>Register</h2>
@@ -58,7 +70,6 @@
             <button onclick="register()">Register</button>
             <div class="msg" id="reg-msg"></div>
         </div>
-
         <!-- Login Form -->
         <div class="card" id="login-card">
             <h2>Login</h2>
@@ -67,7 +78,6 @@
             <button onclick="login()">Login</button>
             <div class="msg" id="login-msg"></div>
         </div>
-
         <!-- Chat Section -->
         <div id="chat-section">
             <div id="chat-box"></div>
@@ -79,51 +89,35 @@
             />
             <button onclick="sendMessage()">Send</button>
         </div>
-
         <script>
-            // Run this when the page loads
             window.addEventListener("DOMContentLoaded", () => {
                 const isLoggedIn = localStorage.getItem("isLoggedIn");
                 if (isLoggedIn === "true") {
-                    // User was logged in → hide auth, show chat
-                    document.getElementById("register-card").style.display =
-                        "none";
-                    document.getElementById("login-card").style.display =
-                        "none";
-                    document.getElementById("chat-section").style.display =
-                        "block";
+                    document.getElementById("register-card").style.display = "none";
+                    document.getElementById("login-card").style.display = "none";
+                    document.getElementById("chat-section").style.display = "block";
                 }
             });
 
             async function register() {
-                const username = document
-                    .getElementById("reg-username")
-                    .value.trim();
+                const username = document.getElementById("reg-username").value.trim();
                 const email = document.getElementById("reg-email").value.trim();
                 const password = document.getElementById("reg-password").value;
-
                 const msgEl = document.getElementById("reg-msg");
                 msgEl.textContent = "";
-
                 try {
-                    const res = await fetch(
-                        "http://localhost:8000/api/auth/register",
-                        {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            credentials: "include",
-                            body: JSON.stringify({ username, email, password }),
-                        }
-                    );
-
+                    const res = await fetch("http://localhost:8000/api/auth/register", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({ username, email, password }),
+                    });
                     const data = await res.json();
                     if (!res.ok) {
                         msgEl.style.color = "crimson";
-                        msgEl.textContent =
-                            data.detail || "Registration failed";
+                        msgEl.textContent = data.detail || "Registration failed";
                         return;
                     }
-
                     msgEl.style.color = "green";
                     msgEl.textContent = `Registered as ${data.username}. You can now login.`;
                 } catch (err) {
@@ -134,46 +128,29 @@
             }
 
             async function login() {
-                const email = document
-                    .getElementById("login-email")
-                    .value.trim();
-                const password =
-                    document.getElementById("login-password").value;
-
+                const email = document.getElementById("login-email").value.trim();
+                const password = document.getElementById("login-password").value;
                 const msgEl = document.getElementById("login-msg");
                 msgEl.textContent = "";
-
                 try {
-                    const res = await fetch(
-                        "http://localhost:8000/api/auth/login",
-                        {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            credentials: "include",
-                            body: JSON.stringify({ email, password }),
-                        }
-                    );
-
+                    const res = await fetch("http://localhost:8000/api/auth/login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({ email, password }),
+                    });
                     const data = await res.json();
                     if (!res.ok) {
                         msgEl.style.color = "crimson";
                         msgEl.textContent = data.detail || "Login failed";
                         return;
                     }
-
                     msgEl.style.color = "green";
                     msgEl.textContent = `Welcome ${data.username}!`;
-
-                    // ✅ Save login flag
                     localStorage.setItem("isLoggedIn", "true");
-
-                    // Hide auth forms, show chat
-                    document.getElementById("register-card").style.display =
-                        "none";
-                    document.getElementById("login-card").style.display =
-                        "none";
-                    document.getElementById("chat-section").style.display =
-                        "block";
+                    document.getElementById("register-card").style.display = "none";
+                    document.getElementById("login-card").style.display = "none";
+                    document.getElementById("chat-section").style.display = "block";
                 } catch (err) {
                     msgEl.style.color = "crimson";
                     msgEl.textContent = "Network error.";
@@ -184,46 +161,94 @@
             async function sendMessage() {
                 const input = document.getElementById("user-input");
                 const chatBox = document.getElementById("chat-box");
-
                 const userText = input.value.trim();
                 if (!userText) return;
 
-                chatBox.innerHTML += `\n🧑: ${userText}\n🤖: `;
-
+                chatBox.innerHTML += `\n🧑: ${userText}\n`;
                 input.value = "";
 
-                const response = await fetch(
-                    "http://localhost:8000/api/chat/send",
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ user_input: userText }),
-                        credentials: "include", // send cookie
-                    }
-                );
+                // Create a loading indicator
+                const loadingId = 'loading-' + Date.now();
+                chatBox.innerHTML += `<span id="${loadingId}" class="loading">🤖 Thinking</span>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                const response = await fetch("http://localhost:8000/api/chat/send", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ user_input: userText }),
+                    credentials: "include",
+                });
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
-                let buffer = ""; // 🔑 accumulate text between reads
-
+                let fullContent = "";
+                let isThinking = true;
+                let lastDisplayedLength = 0;
+                const responseStartMarker = `response-${Date.now()}`;
+                
                 while (true) {
                     const { value, done } = await reader.read();
                     if (done) break;
 
-                    buffer += decoder.decode(value, { stream: true });
+                    const chunk = decoder.decode(value, { stream: true });
+                    fullContent += chunk;
 
-                    // 🔥 Update chat box progressively
-                    chatBox.innerHTML += buffer;
-                    buffer = ""; // clear after writing
-                    chatBox.scrollTop = chatBox.scrollHeight;
+                    // Check if we've reached "Final Answer:" in the accumulated content
+                    if (fullContent.includes("Final Answer:")) {
+                        if (isThinking) {
+                            // Remove loading indicator and prepare for answer
+                            const loadingEl = document.getElementById(loadingId);
+                            if (loadingEl) loadingEl.remove();
+                            chatBox.innerHTML += `🤖: <span id="${responseStartMarker}"></span>`;
+                            isThinking = false;
+                        }
+
+                        // Extract content after the LAST "Final Answer:"
+                        const parts = fullContent.split("Final Answer:");
+                        let answerContent = parts[parts.length - 1];
+                        
+                        // Remove [END] marker and any trailing "Thought:" patterns
+                        answerContent = answerContent
+                            .replace(/\[END\].*$/s, '')
+                            .split(/\nThought:/)[0]
+                            .trim();
+
+                        // Only update if there's new content
+                        if (answerContent.length > lastDisplayedLength) {
+                            const responseEl = document.getElementById(responseStartMarker);
+                            if (responseEl) {
+                                responseEl.textContent = answerContent;
+                                lastDisplayedLength = answerContent.length;
+                                chatBox.scrollTop = chatBox.scrollHeight;
+                            }
+                        }
+                    }
                 }
 
-                // flush any remaining
-                buffer += decoder.decode();
-                if (buffer) {
-                    chatBox.innerHTML += buffer;
+                // Final flush
+                const finalDecoded = decoder.decode();
+                fullContent += finalDecoded;
+
+                if (fullContent.includes("Final Answer:")) {
+                    const parts = fullContent.split("Final Answer:");
+                    let answerContent = parts[parts.length - 1];
+                    
+                    answerContent = answerContent
+                        .replace(/\[END\].*$/s, '')
+                        .split(/\nThought:/)[0]
+                        .trim();
+
+                    const responseEl = document.getElementById(responseStartMarker);
+                    if (responseEl && answerContent.length > lastDisplayedLength) {
+                        responseEl.textContent = answerContent;
+                    }
                 }
 
+                // Remove loading indicator if still present
+                const loadingEl = document.getElementById(loadingId);
+                if (loadingEl) loadingEl.remove();
+
+                chatBox.innerHTML += '\n';
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
         </script>

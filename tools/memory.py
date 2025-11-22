@@ -1,3 +1,4 @@
+import uuid
 from typing import List, Dict, Any, Optional
 from langchain.tools import BaseTool
 from langchain_core.runnables import RunnableConfig
@@ -235,6 +236,7 @@ class SemanticMemoryTools:
             def _run(self, input_data: str) -> str:
                 runtime = get_runtime(ContextSchema)
                 user_id = runtime.context['user_id']
+                # user_id = "c0ca5925-c649-486f-a8a3-dd44bcd08fde"
 
                 # Validate input
                 parsed_data, error_msg = memory_tools._validate_store_memory_input(input_data)
@@ -261,11 +263,13 @@ class SemanticMemoryTools:
                     if memory_count <= 10:
                         # safe to insert
                         with memory_tools.db_connection.cursor() as cursor:
+                            memory_id = str(uuid.uuid4())
                             cursor.execute("""
-                                INSERT INTO semantic_memories (user_id, content, embedding, importance)
-                                VALUES (%s, %s, %s, %s)
+                                INSERT INTO semantic_memories (id, user_id, content, embedding, importance)
+                                VALUES (%s, %s, %s, %s, %s)
                                 RETURNING id
                             """, (
+                                memory_id,
                                 user_id,
                                 parsed_data["content"],
                                 embedding,
