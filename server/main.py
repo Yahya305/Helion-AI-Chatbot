@@ -14,7 +14,6 @@ from api.memories.router import memories_router
 from api.chat.router import chat_router
 from api.middleware.AuthMiddleware import AuthMiddleware
 from agent import Agent
-from config.settings import load_config
 
 
 @asynccontextmanager
@@ -22,7 +21,6 @@ async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
     db_conn = initialize_database()
-    load_config()
     app.state.agent = Agent(db_conn)
     
     logging.info("🚀 Application startup complete")

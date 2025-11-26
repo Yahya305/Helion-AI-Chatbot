@@ -12,7 +12,7 @@ from langchain.schema.runnable import Runnable
 from typing import Sequence, Any
 from prompts import get_agent_prompt
 from tools import get_all_tools
-from config.settings import get_model_config
+from core.constants import MODEL_NAME
 
 
 def get_chat_history(messages: List[BaseMessage]) -> List[BaseMessage]:
@@ -82,12 +82,11 @@ def get_llm_with_tools() -> Runnable[PromptValue | str | Sequence[BaseMessage | 
     Returns:
         Configured LLM instance with bound tools
     """
-    model_config = get_model_config()
     tools = get_all_tools()
     
     llm = ChatGoogleGenerativeAI(
-        model=model_config["name"],
-        temperature=model_config["temperature"],
+        model=MODEL_NAME,
+        temperature=0.7,
     ).bind_tools(tools)
     
     return llm
