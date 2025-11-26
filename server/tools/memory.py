@@ -33,29 +33,28 @@ class ContextSchema:
 class SemanticMemoryTools:
     def __init__(self):
         """
-        Initialize semantic memory tools with Nomic embedding model
+        Initialize semantic memory tools with embedding model
         
         Args:
             db_connection: PostgreSQL connection with pgvector
         """
-        self.db_connection = get_psycopg_db_connection()
         
-        # Load Nomic embedding model (384 dimensions, high quality)
-        logger.debug("Loading Nomic embedding model...")
+        # Load embedding model (384 dimensions, high quality)
+        logger.debug("All-MiniLM-L6-v2 embedding model...")
         self.embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", trust_remote_code=True)
-        logger.debug("Nomic model loaded successfully!")
+        logger.debug("embedding model loaded successfully!")
         
         
     def get_embedding(self, text: str, is_query: bool = False) -> List[float]:
         """
-        Get embedding using Nomic model with appropriate prefixes
+        Get embedding using embedding model with appropriate prefixes
         
         Args:
             text: Text to embed
             is_query: If True, adds search_query prefix; else search_document prefix
         """
         try:
-            # Add Nomic-specific prefixes for better performance
+            # Add embedding-specific prefixes for better performance
             if is_query:
                 text = f"search_query: {text}"
             else:
@@ -65,7 +64,6 @@ class SemanticMemoryTools:
             return embedding.tolist()
         except Exception as e:
             logger.debug(f"Error getting embedding: {e}")
-            # return [0.0] * 768  # Nomic is 768 dimensions
             return [0.0] * 384  # Nomic is 384 dimensions
         
     def _validate_store_memory_input(self, input_data: str) -> tuple[dict, str]:
@@ -402,10 +400,11 @@ class SemanticMemoryTools:
             args_schema: type[BaseModel] = UpdateMemoryInput
             
             def _run(self, memory_id: int, new_content: str, user_id: str) -> str:
+                conn = get_psycopg_db_connection()
                 try:
                     new_embedding = memory_tools.get_embedding(new_content, is_query=False)
                     
-                    with memory_tools.db_connection.cursor() as cursor:
+                    with conn.cursor() as cursor:
                         cursor.execute("""
                             UPDATE semantic_memories 
                             SET content = %s, embedding = %s, created_at = NOW()
@@ -414,7 +413,7 @@ class SemanticMemoryTools:
                         """, (new_content, new_embedding, memory_id, user_id))
                         
                         result = cursor.fetchone()
-                        memory_tools.db_connection.commit()
+                        conn.commit()
                         
                         if result:
                             return f"Memory {memory_id} updated successfully with new content: '{new_content[:100]}...'"
