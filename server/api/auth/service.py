@@ -26,7 +26,7 @@ class AuthService:
     def verify_password(self, plain_password: str, password: str) -> bool:
         return pwd_context.verify(plain_password, password)
 
-    def register_user(self, username: str, email: str, password: str, response: Response) -> User:
+    def register_user(self, username: str, email: str, password: str, response: Response) -> tuple[User, dict]:
         existing = (
             self.db.query(User)
             .filter((User.username == username) | (User.email == email))
@@ -61,12 +61,19 @@ class AuthService:
             samesite="none",
         )
 
-        return new_user
+        # Return token metadata
+        token_info = {
+            "access_token": access_token,
+            "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # in seconds
+            "token_type": "Bearer"
+        }
 
-    def authenticate_user(self, email: str, password: str, response: Response) -> User | None:
+        return new_user, token_info
+
+    def authenticate_user(self, email: str, password: str, response: Response) -> tuple[User | None, dict | None]:
         user = self.db.query(User).filter(User.email == email).first()
         if not user or not self.verify_password(password, user.password):
-            return None
+            return None, None
 
         access_token = self.create_access_token(user)
         self.create_refresh_token(user)
@@ -80,7 +87,14 @@ class AuthService:
             samesite="none",
         )
 
-        return user
+        # Return token metadata
+        token_info = {
+            "access_token": access_token,
+            "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # in seconds
+            "token_type": "Bearer"
+        }
+
+        return user, token_info
 
     def create_access_token(self, user: User) -> str:
         payload = {
@@ -171,3 +185,12 @@ class AuthService:
             .filter(UserSession.user_id == user_id, UserSession.is_valid == True)
             .first()
         )
+
+    def invalidate_user_sessions(self, user_id: str) -> None:
+        """
+        Invalidate all sessions for a user (used during logout)
+        """
+        self.db.query(UserSession).filter(
+            UserSession.user_id == user_id
+        ).update({"is_valid": False})
+        self.db.commit()

@@ -24,7 +24,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # If no access token, check for guest ID
         if not access_token:
-            if guest_id:
+            # Only allow guest access on /api/chat/* routes
+            if guest_id and request.url.path.startswith("/api/chat"):
                 # Allow guest access
                 request.state.user = {
                     "userId": guest_id,
@@ -32,7 +33,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 }
                 return await call_next(request)
             else:
-                # logger.debug("No access token or guest ID found.")
+                # logger.debug("No access token or guest ID found, or not a chat route.")
                 return JSONResponse({"detail": "Unauthorized"}, status_code=401)
 
         db = SessionLocal()

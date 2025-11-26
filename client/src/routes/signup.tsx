@@ -1,56 +1,39 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AuthCard } from "../components/auth/AuthCard";
 import { FormInput } from "../components/auth/FormInput";
-import { api } from "../lib/api";
-import { clearGuestId } from "../lib/guest";
+import { useSignup } from "../hooks/useAuth";
 
 export const Route = createFileRoute("/signup")({
     component: SignupPage,
 });
 
 function SignupPage() {
-    const navigate = useNavigate();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [validationError, setValidationError] = useState("");
+    const signupMutation = useSignup();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
+        setValidationError("");
 
         if (password !== confirmPassword) {
-            setError("Passwords don't match!");
+            setValidationError("Passwords don't match!");
             return;
         }
 
-        setLoading(true);
-
-        try {
-            const response = await api.post("/auth/register", {
-                username: name,
-                email,
-                password,
-            });
-
-            // Clear guest ID on successful registration
-            clearGuestId();
-
-            console.log("Registration successful:", response.data);
-            navigate({ to: "/chats" });
-        } catch (err: any) {
-            console.error("Registration error:", err);
-            setError(
-                err.response?.data?.detail ||
-                    "Registration failed. Please try again."
-            );
-        } finally {
-            setLoading(false);
-        }
+        signupMutation.mutate({ username: name, email, password });
     };
+
+    const errorMessage =
+        validationError ||
+        (signupMutation.isError
+            ? (signupMutation.error as any)?.response?.data?.detail ||
+              "Registration failed. Please try again."
+            : "");
 
     return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-neutral-950">
@@ -62,9 +45,9 @@ function SignupPage() {
                 footerLinkTo="/login"
             >
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {error && (
+                    {errorMessage && (
                         <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                            {error}
+                            {errorMessage}
                         </div>
                     )}
 
@@ -76,7 +59,7 @@ function SignupPage() {
                         onChange={(e) => setName(e.target.value)}
                         placeholder="John Doe"
                         required
-                        disabled={loading}
+                        disabled={signupMutation.isPending}
                     />
 
                     <FormInput
@@ -87,7 +70,7 @@ function SignupPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
                         required
-                        disabled={loading}
+                        disabled={signupMutation.isPending}
                     />
 
                     <FormInput
@@ -98,7 +81,7 @@ function SignupPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
                         required
-                        disabled={loading}
+                        disabled={signupMutation.isPending}
                     />
 
                     <FormInput
@@ -109,15 +92,17 @@ function SignupPage() {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
                         required
-                        disabled={loading}
+                        disabled={signupMutation.isPending}
                     />
 
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={signupMutation.isPending}
                         className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all transform hover:scale-[1.02] font-semibold shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                     >
-                        {loading ? "Creating Account..." : "Create Account"}
+                        {signupMutation.isPending
+                            ? "Creating Account..."
+                            : "Create Account"}
                     </button>
                 </form>
             </AuthCard>

@@ -1,42 +1,21 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AuthCard } from "../components/auth/AuthCard";
 import { FormInput } from "../components/auth/FormInput";
-import { api } from "../lib/api";
-import { clearGuestId } from "../lib/guest";
+import { useLogin } from "../hooks/useAuth";
 
 export const Route = createFileRoute("/login")({
     component: LoginPage,
 });
 
 function LoginPage() {
-    const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const loginMutation = useLogin();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
-        setLoading(true);
-
-        try {
-            const response = await api.post("/auth/login", { email, password });
-
-            // Clear guest ID on successful login
-            clearGuestId();
-
-            console.log("Login successful:", response.data);
-            navigate({ to: "/chats" });
-        } catch (err: any) {
-            console.error("Login error:", err);
-            setError(
-                err.response?.data?.detail || "Login failed. Please try again."
-            );
-        } finally {
-            setLoading(false);
-        }
+        loginMutation.mutate({ email, password });
     };
 
     return (
@@ -49,9 +28,10 @@ function LoginPage() {
                 footerLinkTo="/signup"
             >
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {error && (
+                    {loginMutation.isError && (
                         <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                            {error}
+                            {(loginMutation.error as any)?.response?.data
+                                ?.detail || "Login failed. Please try again."}
                         </div>
                     )}
 
@@ -63,7 +43,7 @@ function LoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
                         required
-                        disabled={loading}
+                        disabled={loginMutation.isPending}
                     />
 
                     <FormInput
@@ -74,7 +54,7 @@ function LoginPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
                         required
-                        disabled={loading}
+                        disabled={loginMutation.isPending}
                     />
 
                     <div className="flex items-center justify-between text-sm">
@@ -97,10 +77,10 @@ function LoginPage() {
 
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loginMutation.isPending}
                         className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all transform hover:scale-[1.02] font-semibold shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                     >
-                        {loading ? "Signing in..." : "Sign In"}
+                        {loginMutation.isPending ? "Signing in..." : "Sign In"}
                     </button>
                 </form>
             </AuthCard>

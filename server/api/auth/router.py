@@ -1,9 +1,10 @@
 # app/auth/router.py
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 from core.database import get_orm_session
 from .service import AuthService
 from .dto.dto import RegisterRequest, LoginRequest
+from datetime import datetime, timezone
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -18,14 +19,18 @@ def register(
     response: Response,
     service: AuthService = Depends(get_auth_service)
 ):
-    print("hererererererere")
-    user = service.register_user(
+    user, token_info = service.register_user(
         username=data.username,
         email=data.email,
         password=data.password,
         response=response
     )
-    return {"id": user.id, "username": user.username, "email": user.email}
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "token": token_info
+    }
 
 
 @auth_router.post("/login", response_model=dict)
@@ -34,7 +39,7 @@ def login(
     response: Response,
     service: AuthService = Depends(get_auth_service)
 ):
-    user = service.authenticate_user(
+    user, token_info = service.authenticate_user(
         email=data.email,
         password=data.password,
         response=response
@@ -44,4 +49,29 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
-    return {"message": "Login successful", "id": user.id, "username": user.username}
+    return {
+        "message": "Login successful",
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "token": token_info
+    }
+
+
+@auth_router.post("/logout", response_model=dict)
+def logout(
+    request: Request,
+    response: Response,
+    service: AuthService = Depends(get_auth_service)
+):
+    # Get user from request state (set by middleware)
+    user_info = getattr(request.state, "user", None)
+    
+    if user_info and not user_info.get("is_guest"):
+        user_id = user_info.get("userId")
+        service.invalidate_user_sessions(user_id)
+    
+    # Clear cookies
+    response.delete_cookie("access_token")
+    
+    return {"message": "Logout successful"}
