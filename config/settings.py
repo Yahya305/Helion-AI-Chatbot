@@ -96,19 +96,6 @@ def setup_streaming_config():
         'show_tool_indicator': True  # Show "[Using tools...]" indicator
     }
 
-
-# def setup_database_config():
-#     """Configure database settings."""
-#     # Create data directory if it doesn't exist
-#     data_dir = Path("data")
-#     data_dir.mkdir(exist_ok=True)
-    
-#     CONFIG['database'] = {
-#         'path': str(data_dir / "customer_support.db"),
-#         'check_same_thread': False,
-#         'timeout': 30.0
-#     }
-
 def setup_database_config():
     """Configure PostgreSQL database settings."""
     CONFIG["database"] = {
@@ -216,23 +203,3 @@ def get_database_config() -> Dict[str, Any]:
     """Get database configuration.""" 
     return CONFIG.get('database', {})
 
-
-def get_streaming_config() -> Dict[str, Any]:
-    """Get streaming configuration."""
-    return CONFIG.get('streaming', {})
-
-
-def get_agent_config() -> Dict[str, Any]:
-    """Get agent configuration."""
-    return CONFIG.get('agent', {})
-
-
-def is_streaming_enabled() -> bool:
-    """Check if streaming is enabled."""
-    return CONFIG.get('streaming', {}).get('enabled', False)
-
-
-def is_real_time_streaming() -> bool:
-    """Check if real-time streaming is enabled."""
-    streaming_config = CONFIG.get('streaming', {})
-    return streaming_config.get('enabled', False) and streaming_config.get('real_time', False)
