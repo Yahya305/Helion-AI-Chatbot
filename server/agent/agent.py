@@ -11,19 +11,19 @@ from typing import Generator
 
 
 class Agent:
-    def __init__(self, db_conn: PGConnection):
+    def __init__(self):
         """Initialize the agent with configuration and workflow."""
         logger.info("Initializing Agent...")
   
         
-        # Initialize database
-        self.db_connection = db_conn
+        # # Initialize database
+        # self.db_connection = db_conn
 
         # Setup and Load tools
         register_default_tools()
         
         # Create the agent workflow
-        self.app = create_agent_workflow(self.db_connection)
+        self.app = create_agent_workflow()
 
     def invoke(self, user_input: str, thread_id: str, user_id: str):
         """

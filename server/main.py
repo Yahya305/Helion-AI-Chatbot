@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
     db_conn = initialize_database()
-    app.state.agent = Agent(db_conn)
+    app.state.agent = Agent()
     
     logging.info("🚀 Application startup complete")
     

@@ -2,6 +2,7 @@
 Graph construction and compilation for the Customer Support Agent.
 Defines the workflow structure and compiles the LangGraph.
 """
+from core.database import get_psycopg_db_connection
 from langgraph.graph import StateGraph, START, END
 
 from .state import AgentState
@@ -9,7 +10,7 @@ from .nodes import agent_node, agent_node_with_streaming, tool_node, decide_next
 from psycopg import Connection
 from langgraph.checkpoint.postgres import PostgresSaver
 
-def create_agent_workflow(db_connection: Connection):
+def create_agent_workflow():
     """
     Create and compile the agent workflow graph.
     
@@ -52,7 +53,7 @@ def create_agent_workflow(db_connection: Connection):
     workflow.add_edge("tool_node", "agent")
     
     # Create the checkpointer with the passed connection
-    checkpointer = PostgresSaver(db_connection)
+    checkpointer = PostgresSaver(get_psycopg_db_connection())
     
     # Setup the database tables
     checkpointer.setup()

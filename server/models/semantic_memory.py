@@ -19,5 +19,5 @@ class SemanticMemory(Base):
     content = Column(String, nullable=False)
     importance = Column(String, default="medium")
 
-    embedding = Column(Vector(768))  # pgvector column
+    embedding = Column(Vector(384))  # pgvector column
     created_at = Column(TIMESTAMP, server_default=func.now(), nullable=False)

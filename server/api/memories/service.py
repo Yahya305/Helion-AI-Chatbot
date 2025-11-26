@@ -14,7 +14,7 @@ class MemoryService:
     def __init__(self, db: Session):
         self.db = db
         self.embedding_model = SentenceTransformer(
-            "nomic-ai/nomic-embed-text-v1.5", trust_remote_code=True
+            "sentence-transformers/all-MiniLM-L6-v2", trust_remote_code=True
         )
 
     def get_embedding(self, text: str, is_query: bool = False) -> List[float]:
@@ -25,7 +25,8 @@ class MemoryService:
             return embedding.tolist()
         except Exception as e:
             logger.error(f"Error getting embedding: {e}")
-            return [0.0] * 768  # fallback vector
+            # return [0.0] * 768  # fallback vector
+            return [0.0] * 384  # fallback vector
 
     def add_memory(self, user_id: str, content: str, importance: str = "medium"):
         embedding = self.get_embedding(content, is_query=False)

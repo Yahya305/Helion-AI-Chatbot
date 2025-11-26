@@ -64,55 +64,36 @@ if TYPE_CHECKING:
 else:
     PGConnection = Connection
 
-
-class DatabaseConnectionPsycopg:
-    conn: PGConnection | None = None
-
-    def set_connection(self, db_connection: Connection):
-        self.conn = db_connection
-
-
-_DatabaseConnPsycopg = DatabaseConnectionPsycopg()
-
-
-def initialize_database() -> PGConnection:
+def initialize_database() -> None:
     """
-    Initialize the PostgreSQL database connection for the customer support agent.
-    This connection is psycopg3-based and compatible with LangGraph PostgresSaver.
+    Initialize PostgreSQL-only setup like extensions and semantic memory table.
+    This uses a short-lived connection ONLY for initialization.
     """
     try:
+        db_uri = f"postgresql://{constants.POSTGRES_USER}:{constants.POSTGRES_PASSWORD}@localhost:5433/{constants.POSTGRES_DB}"
 
-        db_uri=f"postgresql://{constants.POSTGRES_USER}:{constants.POSTGRES_PASSWORD}@localhost:5433/{constants.POSTGRES_DB}"
-        connection = Connection.connect(
+        init_conn = Connection.connect(
             db_uri,
             autocommit=True,
             prepare_threshold=0,
             row_factory=dict_row,
         )
 
-
-
-        # Test the connection
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-            cursor.fetchone()
-
-            # Ensure pgvector extension is installed
+        with init_conn.cursor() as cursor:
+            cursor.execute("SELECT 1;")
             cursor.execute("CREATE EXTENSION IF NOT EXISTS vector;")
 
-            # Ensure semantic memory table exists
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS semantic_memories (
                     id SERIAL PRIMARY KEY,
                     user_id TEXT NOT NULL,
                     content TEXT NOT NULL,
                     importance TEXT DEFAULT 'medium',
-                    embedding vector(768),
+                    embedding vector(384),
                     created_at TIMESTAMP DEFAULT NOW()
                 );
             """)
 
-            # Optional: index for fast ANN search
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_semantic_memories_embedding
                 ON semantic_memories
@@ -120,48 +101,54 @@ def initialize_database() -> PGConnection:
                 WITH (lists = 100);
             """)
 
-        logger.info(f"PostgreSQL (psycopg3) initialized successfully at: {db_uri}")
-        _DatabaseConnPsycopg.set_connection(connection)
-        return connection
+        init_conn.close()
+        logger.info(f"PostgreSQL initialized successfully at: {db_uri}")
 
     except Exception as e:
         logger.error(f"Failed to initialize PostgreSQL database: {e}")
         raise
 
-def get_psycopg_db_connection() -> PGConnection:
-    """Retrieve the global psycopg3 connection (for LangGraph)."""
-    if not _DatabaseConnPsycopg.conn:
-        raise RuntimeError("Psycopg connection not initialized. Call initialize_database() first.")
-    return _DatabaseConnPsycopg.conn
 
-def close_psycopg_connection(connection: Optional[PGConnection]) -> None:
-    """Close PostgreSQL connection."""
+def get_psycopg_db_connection() -> Connection:
+    """
+    ALWAYS return a NEW psycopg3 connection.
+
+    Required for LangGraph because:
+    - tools run in parallel
+    - psycopg connections are NOT thread-safe
+    - shared connections break with pipeline errors
+    """
+    db_uri = f"postgresql://{constants.POSTGRES_USER}:{constants.POSTGRES_PASSWORD}@localhost:5433/{constants.POSTGRES_DB}"
+    return Connection.connect(
+        db_uri,
+        autocommit=True,
+        prepare_threshold=0,
+        row_factory=dict_row,
+    )
+
+
+def close_psycopg_connection(connection: Optional[Connection]) -> None:
+    """Close a psycopg3 connection safely."""
     if connection:
         try:
             connection.close()
-            print("Database connection closed successfully.")
         except Exception as e:
-            print(f"Error during database cleanup: {e}")
+            print(f"Error closing psycopg connection: {e}")
 
 
-def check_database_health(connection: PGConnection) -> dict:
-    """
-    Check PostgreSQL health.
-    """
-    health_report = {
-        "connection_ok": False,
-        "errors": []
-    }
+def check_database_health(connection: Connection) -> dict:
+    """Simple PostgreSQL health check."""
+    report = {"connection_ok": False, "errors": []}
 
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1;")
-            health_report["connection_ok"] = True
+            report["connection_ok"] = True
 
             cursor.execute("SELECT version();")
-            health_report["version"] = cursor.fetchone()[0]
+            report["version"] = cursor.fetchone()[0]
 
     except Exception as e:
-        health_report["errors"].append(str(e))
+        report["errors"].append(str(e))
 
-    return health_report
+    return report

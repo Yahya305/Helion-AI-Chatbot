@@ -40,9 +40,9 @@ class SemanticMemoryTools:
         """
         self.db_connection = get_psycopg_db_connection()
         
-        # Load Nomic embedding model (768 dimensions, high quality)
+        # Load Nomic embedding model (384 dimensions, high quality)
         logger.debug("Loading Nomic embedding model...")
-        self.embedding_model = SentenceTransformer("nomic-ai/nomic-embed-text-v1.5", trust_remote_code=True)
+        self.embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", trust_remote_code=True)
         logger.debug("Nomic model loaded successfully!")
         
         
@@ -65,7 +65,8 @@ class SemanticMemoryTools:
             return embedding.tolist()
         except Exception as e:
             logger.debug(f"Error getting embedding: {e}")
-            return [0.0] * 768  # Nomic is 768 dimensions
+            # return [0.0] * 768  # Nomic is 768 dimensions
+            return [0.0] * 384  # Nomic is 384 dimensions
         
     def _validate_store_memory_input(self, input_data: str) -> tuple[dict, str]:
         """
@@ -242,26 +243,28 @@ class SemanticMemoryTools:
                 if error_msg:
                     return error_msg
                 
+                conn = get_psycopg_db_connection()
                 try:
                     embedding = memory_tools.get_embedding(
                         parsed_data["content"], is_query=False
                     )
 
+
                     # --- helper to count memories ---
-                    def get_memory_count(uid: str) -> int:
-                        with memory_tools.db_connection.cursor() as cursor:
+                    def get_memory_count(conn, uid: str) -> int:
+                        with conn.cursor() as cursor:
                             cursor.execute(
                                 """SELECT COUNT(*) FROM semantic_memories WHERE user_id = %s""",
                                 (uid,)
                             )
                             return cursor.fetchall()[0]['count']
 
-                    memory_count = get_memory_count(user_id)
+                    memory_count = get_memory_count(conn, user_id)
                     logger.debug(f"User {user_id} has {memory_count} stored memories.")
 
                     if memory_count <= 10:
                         # safe to insert
-                        with memory_tools.db_connection.cursor() as cursor:
+                        with conn.cursor() as cursor:
                             memory_id = str(uuid.uuid4())
                             cursor.execute("""
                                 INSERT INTO semantic_memories (id, user_id, content, embedding, importance)
@@ -275,7 +278,7 @@ class SemanticMemoryTools:
                                 parsed_data["importance"]
                             ))
                             memory_id = cursor.fetchone()['id']
-                            memory_tools.db_connection.commit()
+                            conn.commit()
 
                         logger.debug(f"Stored memory {memory_id} for user {user_id}")
                         return (
@@ -291,7 +294,7 @@ class SemanticMemoryTools:
 
                 except Exception as e:
                     logger.debug(f"Error storing memory: {repr(e)}")
-                    memory_tools.db_connection.rollback()
+                    conn.rollback()
                     return f"Error storing memory: {str(e)}"
         
         return StoreMemoryTool()
@@ -334,8 +337,10 @@ class SemanticMemoryTools:
                 try:
                     query_embedding = memory_tools.get_embedding(parsed_data["query"], is_query=True)
 
+                    conn = get_psycopg_db_connection()
+
                     
-                    with memory_tools.db_connection.cursor() as cursor:
+                    with conn.cursor() as cursor:
                         pg_vector = f"[{','.join(str(x) for x in query_embedding)}]"
                         logger.debug(pg_vector)
 
@@ -372,7 +377,7 @@ class SemanticMemoryTools:
                     
                 except Exception as e:
                     logger.debug(f"Error retrieving memories: {str(e)} {(e)}")
-                    memory_tools.db_connection.rollback()
+                    conn.rollback()
                     return f"Error retrieving memories: {str(e)}"
         
         return RetrieveMemoryTool()
