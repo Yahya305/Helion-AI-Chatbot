@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { PageLayout } from "../components/layout/PageLayout";
+import { Header } from "../components/layout/Header";
 
 export const Route = createFileRoute("/")({
     component: HomePage,
@@ -6,31 +8,8 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
     return (
-        <div className="min-h-screen flex flex-col">
-            {/* Header */}
-            <header className="border-b border-neutral-800 bg-neutral-900/50 backdrop-blur-sm">
-                <div className="container mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                            ChatApp
-                        </h1>
-                        <nav className="flex gap-4">
-                            <Link
-                                to="/login"
-                                className="px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors"
-                            >
-                                Login
-                            </Link>
-                            <Link
-                                to="/signup"
-                                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors"
-                            >
-                                Sign Up
-                            </Link>
-                        </nav>
-                    </div>
-                </div>
-            </header>
+        <PageLayout className="flex flex-col">
+            <Header />
 
             {/* Hero Section */}
             <main className="flex-1 flex items-center justify-center">
@@ -60,36 +39,21 @@ function HomePage() {
 
                     {/* Feature Cards */}
                     <div className="grid md:grid-cols-3 gap-8 mt-20 max-w-5xl mx-auto">
-                        <div className="p-6 rounded-xl bg-neutral-900/50 border border-neutral-800 backdrop-blur-sm hover:border-neutral-700 transition-colors">
-                            <div className="text-4xl mb-4">⚡</div>
-                            <h3 className="text-xl font-semibold mb-2">
-                                Lightning Fast
-                            </h3>
-                            <p className="text-neutral-400">
-                                Get instant responses powered by cutting-edge AI
-                                technology
-                            </p>
-                        </div>
-                        <div className="p-6 rounded-xl bg-neutral-900/50 border border-neutral-800 backdrop-blur-sm hover:border-neutral-700 transition-colors">
-                            <div className="text-4xl mb-4">🎨</div>
-                            <h3 className="text-xl font-semibold mb-2">
-                                Beautiful Design
-                            </h3>
-                            <p className="text-neutral-400">
-                                Enjoy a sleek, modern interface that's a
-                                pleasure to use
-                            </p>
-                        </div>
-                        <div className="p-6 rounded-xl bg-neutral-900/50 border border-neutral-800 backdrop-blur-sm hover:border-neutral-700 transition-colors">
-                            <div className="text-4xl mb-4">🔒</div>
-                            <h3 className="text-xl font-semibold mb-2">
-                                Secure & Private
-                            </h3>
-                            <p className="text-neutral-400">
-                                Your conversations are encrypted and completely
-                                private
-                            </p>
-                        </div>
+                        <FeatureCard
+                            icon="⚡"
+                            title="Lightning Fast"
+                            description="Get instant responses powered by cutting-edge AI technology"
+                        />
+                        <FeatureCard
+                            icon="🎨"
+                            title="Beautiful Design"
+                            description="Enjoy a sleek, modern interface that's a pleasure to use"
+                        />
+                        <FeatureCard
+                            icon="🔒"
+                            title="Secure & Private"
+                            description="Your conversations are encrypted and completely private"
+                        />
                     </div>
                 </div>
             </main>
@@ -100,6 +64,24 @@ function HomePage() {
                     <p>&copy; 2025 ChatApp. All rights reserved.</p>
                 </div>
             </footer>
+        </PageLayout>
+    );
+}
+
+function FeatureCard({
+    icon,
+    title,
+    description,
+}: {
+    icon: string;
+    title: string;
+    description: string;
+}) {
+    return (
+        <div className="p-6 rounded-xl bg-neutral-900/50 border border-neutral-800 backdrop-blur-sm hover:border-neutral-700 transition-colors">
+            <div className="text-4xl mb-4">{icon}</div>
+            <h3 className="text-xl font-semibold mb-2">{title}</h3>
+            <p className="text-neutral-400">{description}</p>
         </div>
     );
 }

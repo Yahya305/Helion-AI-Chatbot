@@ -20,9 +20,20 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         access_token = request.cookies.get("access_token")
+        guest_id = request.headers.get("X-Guest-Id")
+
+        # If no access token, check for guest ID
         if not access_token:
-            # logger.debug("No access token found in cookies.")
-            return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+            if guest_id:
+                # Allow guest access
+                request.state.user = {
+                    "userId": guest_id,
+                    "is_guest": True,
+                }
+                return await call_next(request)
+            else:
+                # logger.debug("No access token or guest ID found.")
+                return JSONResponse({"detail": "Unauthorized"}, status_code=401)
 
         db = SessionLocal()
         auth_service = AuthService(db)
@@ -31,6 +42,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             # Normal validation
             user_info = auth_service.verify_access_token(access_token)
             # logger.info(f"Access token valid for user: {user_info.get('userId')}")
+            user_info["is_guest"] = False
             request.state.user = user_info
             return await call_next(request)
 
@@ -68,6 +80,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 "userId": str(refreshed_session.user.id),
                 "username": refreshed_session.user.username,
                 "email": refreshed_session.user.email,
+                "is_guest": False,
             }
 
             response = await call_next(request)

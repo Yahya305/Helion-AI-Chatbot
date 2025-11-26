@@ -1,5 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { AuthCard } from "../components/auth/AuthCard";
+import { FormInput } from "../components/auth/FormInput";
+import { api } from "../lib/api";
+import { clearGuestId } from "../lib/guest";
 
 export const Route = createFileRoute("/signup")({
     component: SignupPage,
@@ -11,132 +15,112 @@ function SignupPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError("");
+
         if (password !== confirmPassword) {
-            alert("Passwords don't match!");
+            setError("Passwords don't match!");
             return;
         }
-        // TODO: Implement actual signup logic
-        console.log("Signup:", { name, email, password });
-        navigate({ to: "/chats" });
+
+        setLoading(true);
+
+        try {
+            const response = await api.post("/auth/register", {
+                username: name,
+                email,
+                password,
+            });
+
+            // Clear guest ID on successful registration
+            clearGuestId();
+
+            console.log("Registration successful:", response.data);
+            navigate({ to: "/chats" });
+        } catch (err: any) {
+            console.error("Registration error:", err);
+            setError(
+                err.response?.data?.detail ||
+                    "Registration failed. Please try again."
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-6">
-            <div className="w-full max-w-md">
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                        Create Account
-                    </h1>
-                    <p className="text-neutral-400">Join ChatApp today</p>
-                </div>
-
-                <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-8 backdrop-blur-sm">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label
-                                htmlFor="name"
-                                className="block text-sm font-medium mb-2 text-neutral-300"
-                            >
-                                Full Name
-                            </label>
-                            <input
-                                id="name"
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg bg-neutral-800 border border-neutral-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                                placeholder="John Doe"
-                                required
-                            />
+        <div className="min-h-screen flex items-center justify-center p-6 bg-neutral-950">
+            <AuthCard
+                title="Create Account"
+                subtitle="Join ChatApp today"
+                footerText="Already have an account?"
+                footerLinkText="Sign in"
+                footerLinkTo="/login"
+            >
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {error && (
+                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                            {error}
                         </div>
+                    )}
 
-                        <div>
-                            <label
-                                htmlFor="email"
-                                className="block text-sm font-medium mb-2 text-neutral-300"
-                            >
-                                Email
-                            </label>
-                            <input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg bg-neutral-800 border border-neutral-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                                placeholder="you@example.com"
-                                required
-                            />
-                        </div>
+                    <FormInput
+                        id="name"
+                        label="Full Name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="John Doe"
+                        required
+                        disabled={loading}
+                    />
 
-                        <div>
-                            <label
-                                htmlFor="password"
-                                className="block text-sm font-medium mb-2 text-neutral-300"
-                            >
-                                Password
-                            </label>
-                            <input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg bg-neutral-800 border border-neutral-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                                placeholder="••••••••"
-                                required
-                            />
-                        </div>
+                    <FormInput
+                        id="email"
+                        label="Email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                        disabled={loading}
+                    />
 
-                        <div>
-                            <label
-                                htmlFor="confirmPassword"
-                                className="block text-sm font-medium mb-2 text-neutral-300"
-                            >
-                                Confirm Password
-                            </label>
-                            <input
-                                id="confirmPassword"
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(e) =>
-                                    setConfirmPassword(e.target.value)
-                                }
-                                className="w-full px-4 py-3 rounded-lg bg-neutral-800 border border-neutral-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                                placeholder="••••••••"
-                                required
-                            />
-                        </div>
+                    <FormInput
+                        id="password"
+                        label="Password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        disabled={loading}
+                    />
 
-                        <button
-                            type="submit"
-                            className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all transform hover:scale-[1.02] font-semibold shadow-lg shadow-blue-500/30"
-                        >
-                            Create Account
-                        </button>
-                    </form>
+                    <FormInput
+                        id="confirmPassword"
+                        label="Confirm Password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        disabled={loading}
+                    />
 
-                    <div className="mt-6 text-center text-sm text-neutral-400">
-                        Already have an account?{" "}
-                        <Link
-                            to="/login"
-                            className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
-                        >
-                            Sign in
-                        </Link>
-                    </div>
-                </div>
-
-                <div className="mt-6 text-center">
-                    <Link
-                        to="/"
-                        className="text-neutral-500 hover:text-neutral-400 transition-colors text-sm"
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all transform hover:scale-[1.02] font-semibold shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                     >
-                        ← Back to home
-                    </Link>
-                </div>
-            </div>
+                        {loading ? "Creating Account..." : "Create Account"}
+                    </button>
+                </form>
+            </AuthCard>
         </div>
     );
 }
