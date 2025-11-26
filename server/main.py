@@ -20,7 +20,7 @@ from agent import Agent
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
-    db_conn = initialize_database()
+    initialize_database()
     app.state.agent = Agent()
     
     logging.info("🚀 Application startup complete")

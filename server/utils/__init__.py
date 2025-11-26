@@ -8,7 +8,12 @@ from .streaming import (
     stream_response,
 )
 
+from .logger import (
+    logger,
+)
+
 __all__ = [    
     # Streaming
-    "stream_response"
+    "stream_response",
+    "logger"
 ]
