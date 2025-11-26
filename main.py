@@ -13,7 +13,7 @@ from api.auth.router import auth_router
 from api.memories.router import memories_router
 from api.chat.router import chat_router
 from api.middleware.AuthMiddleware import AuthMiddleware
-from support_agent import Agent
+from agent import Agent
 from config.settings import load_config
 
 

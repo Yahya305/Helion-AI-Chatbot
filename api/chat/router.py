@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from core.database import get_orm_session
 from .service import ChatService
-from support_agent import Agent
+from agent import Agent
 from .dto.dto import ChatMessageDTO
 
 chat_router = APIRouter(prefix="/chat", tags=["Chat"])

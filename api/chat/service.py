@@ -2,7 +2,7 @@
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from support_agent import Agent
+from agent import Agent
 from .dto.dto import ChatMessageDTO
 from uuid import uuid4
 import logging

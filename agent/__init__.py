@@ -19,6 +19,8 @@ from .runnable import (
     get_agent_prompt,
     get_llm_with_tools
 )
+
+from .agent import Agent
 from .workflow import create_agent_workflow, get_workflow_visualization
 
 __all__ = [
@@ -39,6 +41,9 @@ __all__ = [
     "get_agent_scratchpad",
     "get_agent_prompt",
     "get_llm_with_tools",
+
+    # Agent
+    "Agent",
     
     # Workflow
     "create_agent_workflow",
