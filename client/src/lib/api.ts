@@ -9,13 +9,14 @@ export const api = axios.create({
 
 // Request interceptor to add Guest ID header
 api.interceptors.request.use((config) => {
+    // Guest ID is only needed when user is not logged in
+    // The server checks for access_token cookie automatically
+    // If no cookie exists, we send guest ID
     const guestId = getGuestId();
-    // Only add guest ID if we don't have an auth token (though cookies are handled by browser)
-    // But actually, our plan says: "Inject X-Guest-Id header if a guest ID exists in localStorage"
-    // The server will prioritize the token if present.
     if (guestId) {
         config.headers["X-Guest-Id"] = guestId;
     }
+
     return config;
 });
 

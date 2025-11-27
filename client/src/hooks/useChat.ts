@@ -2,18 +2,29 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { chatApi } from "../lib/chatApi";
 import type { ChatThread } from "@/types/chat";
 import { v4 as uuidv4 } from "uuid";
-import { useState, useCallback } from "react";
-
-const THREADS_KEY = "chat_threads";
+import { useState, useCallback, useEffect } from "react";
 
 export const useThreads = () => {
     const queryClient = useQueryClient();
 
+    // Fetch threads from server instead of localStorage
     const { data: threads = [] } = useQuery({
         queryKey: ["threads"],
-        queryFn: () => {
-            const stored = localStorage.getItem(THREADS_KEY);
-            return stored ? (JSON.parse(stored) as ChatThread[]) : [];
+        queryFn: async () => {
+            try {
+                const serverThreads = await chatApi.listThreads();
+                console.log("-=-=-=-=-=-=-=", serverThreads);
+                // Convert timestamp strings to Date objects
+                return serverThreads.map((thread) => ({
+                    ...thread,
+                    timestamp: thread.timestamp
+                        ? new Date(thread.timestamp)
+                        : new Date(),
+                }));
+            } catch (error) {
+                console.error("Error fetching threads:", error);
+                return [];
+            }
         },
         initialData: [],
     });
@@ -26,19 +37,21 @@ export const useThreads = () => {
             timestamp: new Date(),
         };
 
-        const updatedThreads = [newThread, ...threads];
-        localStorage.setItem(THREADS_KEY, JSON.stringify(updatedThreads));
-        queryClient.setQueryData(["threads"], updatedThreads);
+        // Optimistically add to cache
+        queryClient.setQueryData(["threads"], (old: ChatThread[] = []) => [
+            newThread,
+            ...old,
+        ]);
 
         return newThread;
     };
 
     const updateThread = (threadId: string, updates: Partial<ChatThread>) => {
-        const updatedThreads = threads.map((t: ChatThread) =>
-            t.id === threadId ? { ...t, ...updates } : t
+        queryClient.setQueryData(["threads"], (old: ChatThread[] = []) =>
+            old.map((t: ChatThread) =>
+                t.id === threadId ? { ...t, ...updates } : t
+            )
         );
-        localStorage.setItem(THREADS_KEY, JSON.stringify(updatedThreads));
-        queryClient.setQueryData(["threads"], updatedThreads);
     };
 
     return { threads, createThread, updateThread };
@@ -57,6 +70,12 @@ export const useStreamingMessage = (threadId: string) => {
     const [streamingContent, setStreamingContent] = useState<string>("");
     const [isStreaming, setIsStreaming] = useState(false);
     const { updateThread } = useThreads();
+
+    // Reset streaming state when thread changes
+    useEffect(() => {
+        setStreamingContent("");
+        setIsStreaming(false);
+    }, [threadId]);
 
     const sendMessage = useCallback(
         async (userInput: string) => {
@@ -77,8 +96,12 @@ export const useStreamingMessage = (threadId: string) => {
                         queryClient.invalidateQueries({
                             queryKey: ["messages", threadId],
                         });
+                        // Refetch threads to update sidebar
+                        queryClient.invalidateQueries({
+                            queryKey: ["threads"],
+                        });
 
-                        // Update thread last message
+                        // Update thread last message optimistically
                         updateThread(threadId, {
                             lastMessage:
                                 userInput.substring(0, 50) +
@@ -114,6 +137,8 @@ export const useSendMessage = () => {
             queryClient.invalidateQueries({
                 queryKey: ["messages", variables.thread_id],
             });
+            // Refetch threads to update sidebar
+            queryClient.invalidateQueries({ queryKey: ["threads"] });
 
             // Update thread last message
             updateThread(variables.thread_id, {

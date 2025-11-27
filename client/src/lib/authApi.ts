@@ -28,17 +28,8 @@ export const authApi = {
             "/auth/login",
             credentials
         );
-        // Store token in localStorage
-        if (response.data.token) {
-            localStorage.setItem(
-                "access_token",
-                response.data.token.access_token
-            );
-            localStorage.setItem(
-                "token_expires_at",
-                String(Date.now() + response.data.token.expires_in * 1000)
-            );
-        }
+        // Token is stored in HTTP-only cookie by the server
+        // No need to store in localStorage
         return response.data;
     },
 
@@ -49,27 +40,13 @@ export const authApi = {
             "/auth/register",
             credentials
         );
-        // Store token in localStorage
-        if (response.data.token) {
-            localStorage.setItem(
-                "access_token",
-                response.data.token.access_token
-            );
-            localStorage.setItem(
-                "token_expires_at",
-                String(Date.now() + response.data.token.expires_in * 1000)
-            );
-        }
+        // Token is stored in HTTP-only cookie by the server
+        // No need to store in localStorage
         return response.data;
     },
 
     logout: async (): Promise<void> => {
-        try {
-            await api.post("/auth/logout");
-        } finally {
-            // Clear tokens from localStorage
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("token_expires_at");
-        }
+        await api.post("/auth/logout");
+        // Cookie is cleared by the server
     },
 };

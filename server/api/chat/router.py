@@ -32,6 +32,18 @@ def send_message(
     return chat_service.send_message(message, user_id)
 
 
+# IMPORTANT: More specific routes must come before generic ones
+@chat_router.get("/threads/list")
+def list_user_threads(
+    request: Request,
+    service: ChatService = Depends(get_chat_service)
+):
+    user_id = request.state.user['userId']
+    print("user_id", user_id)
+    return service.list_user_threads(user_id)
+
+
 @chat_router.get("/{thread_id}")
 def get_latest_messages(thread_id: str, service: ChatService = Depends(get_chat_service)):
     return service.get_latest_messages(thread_id)
+

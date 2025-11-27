@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
     authApi,
@@ -9,6 +9,7 @@ import { clearGuestId } from "../lib/guest";
 
 export const useLogin = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: (credentials: LoginCredentials) =>
@@ -16,6 +17,8 @@ export const useLogin = () => {
         onSuccess: () => {
             // Clear guest ID on successful login
             clearGuestId();
+            // Refetch current user
+            queryClient.invalidateQueries({ queryKey: ["currentUser"] });
             // Navigate to chats
             navigate({ to: "/chats" });
         },
@@ -24,6 +27,7 @@ export const useLogin = () => {
 
 export const useSignup = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: (credentials: RegisterCredentials) =>
@@ -31,6 +35,8 @@ export const useSignup = () => {
         onSuccess: () => {
             // Clear guest ID on successful signup
             clearGuestId();
+            // Refetch current user
+            queryClient.invalidateQueries({ queryKey: ["currentUser"] });
             // Navigate to chats
             navigate({ to: "/chats" });
         },
@@ -39,10 +45,13 @@ export const useSignup = () => {
 
 export const useLogout = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: () => authApi.logout(),
         onSettled: () => {
+            // Clear current user from cache
+            queryClient.setQueryData(["currentUser"], null);
             // Navigate to login
             navigate({ to: "/login" });
         },

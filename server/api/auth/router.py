@@ -3,8 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 from core.database import get_orm_session
 from .service import AuthService
-from .dto.dto import RegisterRequest, LoginRequest
-from datetime import datetime, timezone
+from .dto.dto import LoginRequest, RegisterRequest
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -12,6 +11,8 @@ auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 def get_auth_service(db: Session = Depends(get_orm_session)) -> AuthService:
     return AuthService(db)
 
+
+# ========= Endpoints ==========
 
 @auth_router.post("/register", response_model=dict)
 def register(
@@ -26,7 +27,7 @@ def register(
         response=response
     )
     return {
-        "id": user.id,
+        "id": str(user.id),
         "username": user.username,
         "email": user.email,
         "token": token_info
@@ -50,28 +51,43 @@ def login(
             detail="Invalid username or password",
         )
     return {
-        "message": "Login successful",
-        "id": user.id,
+        "id": str(user.id),
         "username": user.username,
         "email": user.email,
         "token": token_info
     }
 
 
-@auth_router.post("/logout", response_model=dict)
+@auth_router.post("/logout")
 def logout(
     request: Request,
     response: Response,
     service: AuthService = Depends(get_auth_service)
 ):
     # Get user from request state (set by middleware)
-    user_info = getattr(request.state, "user", None)
+    if hasattr(request.state, 'user') and request.state.user:
+        user_id = request.state.user.get('userId')
+        if user_id:
+            service.invalidate_user_sessions(user_id)
     
-    if user_info and not user_info.get("is_guest"):
-        user_id = user_info.get("userId")
-        service.invalidate_user_sessions(user_id)
-    
-    # Clear cookies
+    # Clear the access_token cookie
     response.delete_cookie("access_token")
+    return {"message": "Logged out successfully"}
+
+
+@auth_router.get("/me")
+def get_current_user(request: Request):
+    """Get the current authenticated user or guest info"""
+    if not hasattr(request.state, 'user') or not request.state.user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
     
-    return {"message": "Logout successful"}
+    user_info = request.state.user
+    return {
+        "userId": user_info.get('userId'),
+        "username": user_info.get('username'),
+        "email": user_info.get('email'),
+        "isGuest": user_info.get('is_guest', False)
+    }
