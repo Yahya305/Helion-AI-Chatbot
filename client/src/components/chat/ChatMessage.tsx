@@ -1,4 +1,5 @@
-import type { Message } from "../../routes/chats";
+import type { ChatMessage as Message } from "../../types/chat";
+import { ThoughtBox } from "./ThoughtBox";
 
 interface ChatMessageProps {
     message: Message;
@@ -6,6 +7,45 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message }: ChatMessageProps) {
     const isUser = message.role === "user";
+
+    // Hide "Retrieved memories" messages completely
+    if (message.content.startsWith("Retrieved memories")) {
+        return null;
+    }
+
+    // Hide tool messages that start with "Retrieved memories"
+    if (
+        message.role === "tool" &&
+        message.content.startsWith("Retrieved memories")
+    ) {
+        return null;
+    }
+
+    // Parse thought process if present
+    // Looking for pattern: Thought: ... [Action: ... Action Input: ...]
+    let thought = "";
+    let displayContent = message.content;
+
+    if (!isUser) {
+        // Regex to capture the thought block
+        // Matches optional opening backticks, then "Thought:", then everything until "Final Answer:", closing backticks, or end of string
+        const thoughtMatch = message.content.match(
+            /(?:```\s*)?(Thought:[\s\S]*?)(?=\s*Final Answer:|\s*```|$)/
+        );
+
+        if (thoughtMatch) {
+            thought = thoughtMatch[1].trim();
+
+            // Remove the matched thought block from the content
+            displayContent = message.content
+                .replace(thoughtMatch[0], "")
+                .trim();
+
+            // Clean up any remaining empty code blocks or backticks
+            displayContent = displayContent.replace(/^```\s*```$/, "").trim();
+            displayContent = displayContent.replace(/^```$/, "").trim();
+        }
+    }
 
     return (
         <div
@@ -17,16 +57,22 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 </div>
             )}
 
-            <div
-                className={`max-w-3xl rounded-2xl px-6 py-4 ${
-                    isUser
-                        ? "bg-blue-600 text-white"
-                        : "bg-neutral-800 border border-neutral-700"
-                }`}
-            >
-                <p className="whitespace-pre-wrap leading-relaxed">
-                    {message.content}
-                </p>
+            <div className="flex flex-col max-w-3xl w-full">
+                {thought && <ThoughtBox thought={thought} />}
+
+                {displayContent && (
+                    <div
+                        className={`rounded-2xl px-6 py-4 ${
+                            isUser
+                                ? "bg-blue-600 text-white"
+                                : "bg-neutral-800 border border-neutral-700"
+                        }`}
+                    >
+                        <p className="whitespace-pre-wrap leading-relaxed">
+                            {displayContent}
+                        </p>
+                    </div>
+                )}
             </div>
 
             {isUser && (
