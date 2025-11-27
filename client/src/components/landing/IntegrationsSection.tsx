@@ -27,10 +27,10 @@ export function IntegrationsSection() {
                     </p>
                 </div>
 
-                <div className="relative w-full max-w-4xl mx-auto aspect-[16/9] md:aspect-[2/1] flex items-center justify-center">
-                    {/* Connecting Lines (SVG) */}
+                <div className="relative w-full max-w-4xl mx-auto md:aspect-[2/1] grid grid-cols-2 gap-8 md:block">
+                    {/* Connecting Lines (SVG) - Desktop Only */}
                     <svg
-                        className="absolute inset-0 w-full h-full pointer-events-none opacity-30"
+                        className="hidden md:block absolute inset-0 w-full h-full pointer-events-none opacity-30"
                         viewBox="0 0 800 400"
                     >
                         {/* Center to Top Left */}
@@ -91,7 +91,7 @@ export function IntegrationsSection() {
                     </svg>
 
                     {/* Center Node */}
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+                    <div className="col-span-2 flex justify-center md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-20 my-8 md:my-0">
                         <div className="relative group">
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-500" />
                             <div className="w-24 h-24 rounded-full bg-neutral-900 border-2 border-purple-500/50 flex items-center justify-center relative z-10 shadow-2xl shadow-purple-900/50">
@@ -104,37 +104,37 @@ export function IntegrationsSection() {
                     <IntegrationNode
                         icon={<Globe />}
                         label="Web"
-                        position="top-20 left-[20%] md:left-[25%]"
+                        position="md:absolute md:top-20 md:left-[25%]"
                         delay="0s"
                     />
                     <IntegrationNode
                         icon={<Cpu />}
                         label="AI Models"
-                        position="top-20 right-[20%] md:right-[25%]"
+                        position="md:absolute md:top-20 md:right-[25%]"
                         delay="1s"
                     />
                     <IntegrationNode
                         icon={<Database />}
                         label="Data"
-                        position="top-1/2 -translate-y-1/2 left-[5%] md:left-[15%]"
+                        position="md:absolute md:top-1/2 md:-translate-y-1/2 md:left-[15%]"
                         delay="2s"
                     />
                     <IntegrationNode
                         icon={<MessageSquare />}
                         label="Chat"
-                        position="top-1/2 -translate-y-1/2 right-[5%] md:right-[15%]"
+                        position="md:absolute md:top-1/2 md:-translate-y-1/2 md:right-[15%]"
                         delay="3s"
                     />
                     <IntegrationNode
                         icon={<Shield />}
                         label="Security"
-                        position="bottom-20 left-[20%] md:left-[25%]"
+                        position="md:absolute md:bottom-20 md:left-[25%]"
                         delay="4s"
                     />
                     <IntegrationNode
                         icon={<Zap />}
                         label="Automation"
-                        position="bottom-20 right-[20%] md:right-[25%]"
+                        position="md:absolute md:bottom-20 md:right-[25%]"
                         delay="5s"
                     />
                 </div>
@@ -156,7 +156,7 @@ function IntegrationNode({
 }) {
     return (
         <div
-            className={`absolute ${position} flex flex-col items-center gap-2 animate-float`}
+            className={`${position} flex flex-col items-center gap-2 animate-float`}
             style={{ animationDelay: delay }}
         >
             <div className="w-16 h-16 rounded-full bg-neutral-900/80 border border-neutral-700 flex items-center justify-center text-neutral-300 hover:text-white hover:border-purple-500/50 hover:bg-neutral-800 transition-all duration-300 shadow-lg backdrop-blur-sm">
