@@ -1,5 +1,5 @@
 """
-Tools package for the Customer Support Agent.
+Tools package for Helion.
 
 This package contains all tools that the agent can use to perform actions
 such as web searches, calculations, data retrieval, etc.

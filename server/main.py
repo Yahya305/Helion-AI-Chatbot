@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
 
 # Initialize FastAPI app
 app = FastAPI(
-    title= "Agent 2.0",
+    title= "Helion",
     description="A full-fledged FastAPI backend application",
     version= "0.1",
     docs_url="/api/docs" if constants.ENV == "development" else None,

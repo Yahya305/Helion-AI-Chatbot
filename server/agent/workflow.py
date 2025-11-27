@@ -1,5 +1,5 @@
 """
-Graph construction and compilation for the Customer Support Agent.
+Graph construction and compilation for Helion.
 Defines the workflow structure and compiles the LangGraph.
 """
 from core.database import get_psycopg_db_connection

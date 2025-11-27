@@ -1,5 +1,5 @@
 """
-Web search tool for the Customer Support Agent.
+Web search tool for Helion.
 Provides web search capabilities for finding up-to-date information.
 """
 

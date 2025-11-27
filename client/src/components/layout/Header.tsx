@@ -14,7 +14,7 @@ export function Header() {
                         to="/"
                         className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent hover:opacity-90 transition-opacity"
                     >
-                        ChatApp
+                        Helion
                     </Link>
                     <nav className="flex gap-4">
                         {isAuthenticated ? (

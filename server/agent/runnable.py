@@ -1,5 +1,5 @@
 """
-Agent runnable chain setup for the Customer Support Agent.
+Agent runnable chain setup for Helion.
 Handles the creation and configuration of the agent's runnable chain.
 """
 

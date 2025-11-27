@@ -26,7 +26,7 @@ engine = create_engine(
     future=True,
     connect_args={
         "options": "-c timezone=utc",
-        "application_name": "Agent 2.0",
+        "application_name": "Helion",
         "connect_timeout": 10,
     },
 )

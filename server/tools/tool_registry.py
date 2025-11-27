@@ -1,5 +1,5 @@
 """
-Tool registry for managing all available tools in the Customer Support Agent.
+Tool registry for managing all available tools in Helion.
 Provides centralized tool management and easy extension capabilities.
 """
 

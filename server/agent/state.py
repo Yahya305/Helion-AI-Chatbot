@@ -1,5 +1,5 @@
 """
-Agent state definition for the Customer Support Agent.
+Agent state definition for Helion.
 Defines the state structure used throughout the agent workflow.
 """
 

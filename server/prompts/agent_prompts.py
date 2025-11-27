@@ -1,5 +1,5 @@
 """
-Agent prompt templates for the Customer Support Agent.
+Agent prompt templates for Helion.
 Handles prompt formatting, templates, and prompt management.
 """
 

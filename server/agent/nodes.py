@@ -1,5 +1,5 @@
 """
-Node implementations for the Customer Support Agent workflow.
+Node implementations for the Helion workflow.
 Contains all the graph nodes including agent_node, tool_node, and their variants.
 """
 

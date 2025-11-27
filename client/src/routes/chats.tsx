@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
 import { ChatSidebar } from "../components/chat/ChatSidebar";
 import { ChatMessage } from "../components/chat/ChatMessage";
@@ -14,6 +14,7 @@ export const Route = createFileRoute("/chats")({
 function ChatsPage() {
     const { threads, createThread } = useThreads();
     console.log("threads", threads);
+    const navigate = useNavigate();
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const { user } = useUser();
 
@@ -107,7 +108,7 @@ function ChatsPage() {
                             />
                         </svg>
                     </button>
-                    <h2 className="text-lg font-semibold">ChatApp</h2>
+                    <h2 className="text-lg font-semibold cursor-pointer" onClick={() => navigate({to: "/"})}>Helion</h2>
                 </div>
 
                 {/* Messages */}

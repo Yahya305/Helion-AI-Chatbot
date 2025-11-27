@@ -55,9 +55,11 @@ export function ChatMessage({ message, user }: ChatMessageProps) {
             className={`flex gap-4 ${isUser ? "justify-end" : "justify-start"}`}
         >
             {!isUser && (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold">AI</span>
-                </div>
+                <img
+                    src="/favicon.jpg"
+                    alt="Helion"
+                    className="w-8 h-8 rounded-full flex-shrink-0 object-cover border border-gray-400"
+                />
             )}
 
             <div className="flex flex-col max-w-3xl">

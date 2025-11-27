@@ -1,5 +1,5 @@
 """
-Prompts package for the Customer Support Agent.
+Prompts package for Helion.
 
 This package manages all prompt templates and formatting for the agent,
 including ReAct prompts, customer support specific prompts, and custom
