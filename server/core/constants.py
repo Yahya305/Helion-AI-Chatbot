@@ -34,4 +34,22 @@ POSTGRES_DB = os.getenv("POSTGRES_DB")
 PGADMIN_EMAIL = os.getenv("PGADMIN_DEFAULT_EMAIL")
 PGADMIN_PASSWORD = os.getenv("PGADMIN_DEFAULT_PASSWORD")
 
-POSTGRES_URI = f"postgresql+psycopg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@localhost:5433/{POSTGRES_DB}"
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+if DATABASE_URL:
+    # Use the provided DATABASE_URL for production
+    # Ensure it works with SQLAlchemy (might need +psycopg if strictly required, but usually auto-detects)
+    # If we want to enforce psycopg3 in SQLAlchemy:
+    if "postgresql://" in DATABASE_URL and "+psycopg" not in DATABASE_URL:
+        POSTGRES_URI = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+    else:
+        POSTGRES_URI = DATABASE_URL
+    
+    # For raw psycopg connection
+    POSTGRES_CONNECTION_URI = DATABASE_URL
+else:
+    # Local development
+    POSTGRES_URI = f"postgresql+psycopg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@localhost:5433/{POSTGRES_DB}"
+    POSTGRES_CONNECTION_URI = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@localhost:5433/{POSTGRES_DB}"

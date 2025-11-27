@@ -51,7 +51,9 @@ app.add_middleware(
         "127.0.0.1",
         "127.0.0.1:8000",
         "127.0.0.1:5500",
-        constants.FRONTEND_URL
+        "*.onrender.com",
+        "*.netlify.app",
+        constants.FRONTEND_URL or "*"
     ]
 )
 
@@ -59,6 +61,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://127.0.0.1:5500",
+        "http://localhost:5173",
+        "*.netlify.app",
         constants.FRONTEND_URL,
     ],
     allow_credentials=True,

@@ -64,13 +64,14 @@ if TYPE_CHECKING:
 else:
     PGConnection = Connection
 
+
 def initialize_database() -> None:
     """
     Initialize PostgreSQL-only setup like extensions and semantic memory table.
     This uses a short-lived connection ONLY for initialization.
     """
     try:
-        db_uri = f"postgresql://{constants.POSTGRES_USER}:{constants.POSTGRES_PASSWORD}@localhost:5433/{constants.POSTGRES_DB}"
+        db_uri = constants.POSTGRES_CONNECTION_URI
 
         init_conn = Connection.connect(
             db_uri,
@@ -118,7 +119,7 @@ def get_psycopg_db_connection() -> Connection:
     - psycopg connections are NOT thread-safe
     - shared connections break with pipeline errors
     """
-    db_uri = f"postgresql://{constants.POSTGRES_USER}:{constants.POSTGRES_PASSWORD}@localhost:5433/{constants.POSTGRES_DB}"
+    db_uri = constants.POSTGRES_CONNECTION_URI
     return Connection.connect(
         db_uri,
         autocommit=True,
