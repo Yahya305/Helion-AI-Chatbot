@@ -56,7 +56,14 @@ def create_agent_workflow():
     checkpointer = PostgresSaver(get_psycopg_db_connection())
     
     # Setup the database tables
-    checkpointer.setup()
+    try:
+        checkpointer.setup()
+    except Exception as e:
+        # Ignore DuplicateColumn error if it's already set up
+        if "DuplicateColumn" in str(e) or "already exists" in str(e):
+            print(f"Database setup warning (safe to ignore): {e}")
+        else:
+            print(f"Database setup error: {e}")
     
     # Compile the workflow with checkpointing
     app = workflow.compile(checkpointer=checkpointer)
