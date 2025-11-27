@@ -18,6 +18,7 @@ export const chatApi = {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "X-Guest-Id": localStorage.getItem("guest_id") ?? "",
             },
             credentials: "include",
             body: JSON.stringify(data),
@@ -69,7 +70,7 @@ export const chatApi = {
 
     listThreads: async (): Promise<ChatThread[]> => {
         const response = await api.get("/chat/threads/list");
-        console.log("-=-=-=-=-=-=-=", api.defaults.baseURL);   
+        console.log("-=-=-=-=-=-=-=", api.defaults.baseURL);
         return response.data;
     },
 };

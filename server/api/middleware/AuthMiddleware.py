@@ -15,17 +15,20 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or request.url.path in [
             "/api/auth/login",
             "/api/auth/register",
+            "/api/auth/me",
         ]:
             # logger.debug(f"Skipping auth for path: {request.url.path}")
             return await call_next(request)
 
         access_token = request.cookies.get("access_token")
         guest_id = request.headers.get("X-Guest-Id")
+        print("Guest ID:", guest_id, request.url.path)
 
         # If no access token, check for guest ID
         if not access_token:
             # Only allow guest access on /api/chat/* routes
             if guest_id and request.url.path.startswith("/api/chat"):
+                print("Guest access allowed")
                 # Allow guest access
                 request.state.user = {
                     "userId": guest_id,
