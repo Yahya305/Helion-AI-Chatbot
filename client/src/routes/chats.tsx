@@ -12,18 +12,17 @@ export const Route = createFileRoute("/chats")({
 
 function ChatsPage() {
     const { threads, createThread } = useThreads();
+    console.log("threads", threads);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
-    // Initialize active chat if threads exist but none selected
+    // Initialize active chat from server threads
     useEffect(() => {
         if (threads.length > 0 && !activeChatId) {
+            // Select the first thread from server
             setActiveChatId(threads[0].id);
-        } else if (threads.length === 0 && !activeChatId) {
-            // Create a new thread if none exist
-            const newThread = createThread();
-            setActiveChatId(newThread.id);
         }
-    }, [threads, activeChatId, createThread]);
+        // Don't auto-create a thread - let user click "New Chat"
+    }, [threads.length]); // Only depend on threads.length to avoid infinite loop
 
     const { data: messages = [], isLoading: messagesLoading } = useMessages(
         activeChatId || ""
@@ -45,16 +44,27 @@ function ChatsPage() {
     }, [messages, streamingContent]);
 
     const handleSend = async () => {
-        if (!input.trim() || !activeChatId) return;
+        if (!input.trim()) return;
 
-        const userMessage = input;
-        setInput("");
-
-        // Send the message with streaming
-        await sendMessage(userMessage);
+        // If no active chat, create a new one
+        if (!activeChatId) {
+            const newThread = createThread();
+            setActiveChatId(newThread.id);
+            // The message will be sent after activeChatId is set
+            setTimeout(async () => {
+                const userMessage = input;
+                setInput("");
+                await sendMessage(userMessage);
+            }, 0);
+        } else {
+            const userMessage = input;
+            setInput("");
+            await sendMessage(userMessage);
+        }
     };
 
     const handleNewChat = () => {
+        // Create new thread and set as active
         const newThread = createThread();
         setActiveChatId(newThread.id);
     };

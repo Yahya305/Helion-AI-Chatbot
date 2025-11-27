@@ -130,6 +130,7 @@ class Agent:
         """
         try:
             state = self.app.get_state(config={"configurable": {"thread_id": thread_id}})
+            print("llllll",state)
             
             if not (state and state.values and "messages" in state.values):
                 return []

@@ -8,12 +8,18 @@ export const useThreads = () => {
     const queryClient = useQueryClient();
 
     // Fetch threads from server instead of localStorage
-    const { data: threads = [] } = useQuery({
+    const {
+        data: threads = [],
+        isLoading,
+        error,
+        isError,
+    } = useQuery({
         queryKey: ["threads"],
         queryFn: async () => {
+            console.log("🔵 Fetching threads from server...");
             try {
                 const serverThreads = await chatApi.listThreads();
-                console.log("-=-=-=-=-=-=-=", serverThreads);
+                console.log("✅ Threads fetched:", serverThreads);
                 // Convert timestamp strings to Date objects
                 return serverThreads.map((thread) => ({
                     ...thread,
@@ -22,12 +28,15 @@ export const useThreads = () => {
                         : new Date(),
                 }));
             } catch (error) {
-                console.error("Error fetching threads:", error);
+                console.error("❌ Error fetching threads:", error);
                 return [];
             }
         },
-        initialData: [],
+        staleTime: 0, // Always fetch fresh data
+        retry: 1,
     });
+
+    console.log("📊 useThreads state:", { threads, isLoading, isError, error });
 
     const createThread = () => {
         const newThread: ChatThread = {

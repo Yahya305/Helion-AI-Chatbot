@@ -42,12 +42,11 @@ class ChatService:
         query = text("""
             SELECT DISTINCT
                 thread_id,
-                MAX(checkpoint_id) as latest_checkpoint_id,
-                MAX(created_at) as last_updated
+                MAX(checkpoint_id) as latest_checkpoint_id
             FROM checkpoints
             WHERE metadata->>'user_id' = :user_id
             GROUP BY thread_id
-            ORDER BY last_updated DESC
+            ORDER BY latest_checkpoint_id DESC
         """)
         
         result = self.db.execute(query, {"user_id": user_id})
@@ -61,11 +60,20 @@ class ChatService:
             title = "New Chat"
             last_message = ""
             
-            if messages and len(messages) > 0:
+            if messages:
                 first_msg = messages[0]
                 # Use first user message as title
                 if first_msg.get('role') == 'user':
-                    content = first_msg.get('content', '')
+                    content = first_msg.get('content')
+                    
+                    # Handle potential list content (multimodal)
+                    if isinstance(content, list):
+                        content = " ".join([str(c.get('text', '')) for c in content if isinstance(c, dict) and 'text' in c])
+                    
+                    # Ensure content is string
+                    if not isinstance(content, str):
+                        content = str(content) if content is not None else ""
+                        
                     title = content[:50] + ('...' if len(content) > 50 else '')
                     last_message = content[:100]
             
@@ -73,7 +81,7 @@ class ChatService:
                 "id": thread_id,
                 "title": title,
                 "lastMessage": last_message,
-                "timestamp": row.last_updated.isoformat() if row.last_updated else None
+                "timestamp": None
             })
         
         return threads
