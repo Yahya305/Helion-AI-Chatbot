@@ -3,43 +3,33 @@ import { useState, useRef, useEffect } from "react";
 import { ChatSidebar } from "../components/chat/ChatSidebar";
 import { ChatMessage } from "../components/chat/ChatMessage";
 import { ChatInput } from "../components/chat/ChatInput";
+import { useThreads, useMessages, useSendMessage } from "../hooks/useChat";
+import type { ChatThread } from "@/lib/chatApi";
 
 export const Route = createFileRoute("/chats")({
     component: ChatsPage,
 });
 
-export interface Message {
-    id: string;
-    role: "user" | "assistant";
-    content: string;
-    timestamp: Date;
-}
-
-export interface Chat {
-    id: string;
-    title: string;
-    lastMessage: string;
-    timestamp: Date;
-}
-
 function ChatsPage() {
-    const [chats, setChats] = useState<Chat[]>([
-        {
-            id: "1",
-            title: "Welcome Chat",
-            lastMessage: "Hello! How can I help you today?",
-            timestamp: new Date(),
-        },
-    ]);
-    const [activeChat, setActiveChat] = useState<string>("1");
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: "1",
-            role: "assistant",
-            content: "Hello! I'm your AI assistant. How can I help you today?",
-            timestamp: new Date(),
-        },
-    ]);
+    const { threads, createThread } = useThreads();
+    const [activeChatId, setActiveChatId] = useState<string | null>(null);
+
+    // Initialize active chat if threads exist but none selected
+    useEffect(() => {
+        if (threads.length > 0 && !activeChatId) {
+            setActiveChatId(threads[0].id);
+        } else if (threads.length === 0 && !activeChatId) {
+            // Create a new thread if none exist
+            const newThread = createThread();
+            setActiveChatId(newThread.id);
+        }
+    }, [threads, activeChatId, createThread]);
+
+    const { data: messages = [], isLoading: messagesLoading } = useMessages(
+        activeChatId || ""
+    );
+    const sendMessageMutation = useSendMessage();
+
     const [input, setInput] = useState("");
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -53,59 +43,33 @@ function ChatsPage() {
     }, [messages]);
 
     const handleSend = () => {
-        if (!input.trim()) return;
+        if (!input.trim() || !activeChatId) return;
 
-        const userMessage: Message = {
-            id: Date.now().toString(),
-            role: "user",
-            content: input,
-            timestamp: new Date(),
-        };
+        sendMessageMutation.mutate({
+            user_input: input,
+            thread_id: activeChatId,
+        });
 
-        setMessages((prev) => [...prev, userMessage]);
         setInput("");
-
-        // Simulate AI response
-        setTimeout(() => {
-            const aiMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                role: "assistant",
-                content:
-                    "This is a simulated response. In a real application, this would be connected to an AI backend.",
-                timestamp: new Date(),
-            };
-            setMessages((prev) => [...prev, aiMessage]);
-        }, 1000);
     };
 
     const handleNewChat = () => {
-        const newChat: Chat = {
-            id: Date.now().toString(),
-            title: "New Chat",
-            lastMessage: "Start a conversation...",
-            timestamp: new Date(),
-        };
-        setChats((prev) => [newChat, ...prev]);
-        setActiveChat(newChat.id);
-        setMessages([
-            {
-                id: "1",
-                role: "assistant",
-                content:
-                    "Hello! I'm your AI assistant. How can I help you today?",
-                timestamp: new Date(),
-            },
-        ]);
+        const newThread = createThread();
+        setActiveChatId(newThread.id);
     };
+
+    // Transform API messages to UI format if needed
+    // Assuming API returns list of dicts that match ChatMessage interface roughly
+    // We might need to map them if the structure differs significantly
 
     return (
         <div className="h-screen flex overflow-hidden">
             <ChatSidebar
                 isOpen={sidebarOpen}
-                chats={chats}
-                activeChatId={activeChat}
+                chats={threads}
+                activeChatId={activeChatId || ""}
                 onNewChat={handleNewChat}
-                onSelectChat={setActiveChat}
+                onSelectChat={setActiveChatId}
             />
 
             {/* Main Chat Area */}
@@ -135,9 +99,15 @@ function ChatsPage() {
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                    {messages.map((message) => (
-                        <ChatMessage key={message.id} message={message} />
-                    ))}
+                    {messagesLoading ? (
+                        <div className="flex items-center justify-center h-full text-neutral-500">
+                            Loading messages...
+                        </div>
+                    ) : (
+                        messages.map((msg: ChatThread) => (
+                            <ChatMessage key={msg.id} message={msg} />
+                        ))
+                    )}
                     <div ref={messagesEndRef} />
                 </div>
 
@@ -145,6 +115,7 @@ function ChatsPage() {
                     value={input}
                     onChange={setInput}
                     onSend={handleSend}
+                    disabled={sendMessageMutation.isPending || !activeChatId}
                 />
             </div>
         </div>

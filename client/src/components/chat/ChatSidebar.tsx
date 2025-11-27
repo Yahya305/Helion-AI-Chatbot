@@ -1,8 +1,8 @@
-import type { Chat } from "@/routes/chats";
+import type { ChatThread } from "@/lib/chatApi";
 
 interface ChatSidebarProps {
     isOpen: boolean;
-    chats: Chat[];
+    chats: ChatThread[];
     activeChatId: string;
     onNewChat: () => void;
     onSelectChat: (id: string) => void;

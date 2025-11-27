@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { AuthCard } from "../components/auth/AuthCard";
 import { FormInput } from "../components/auth/FormInput";
 import { useSignup } from "../hooks/useAuth";
@@ -15,6 +15,13 @@ function SignupPage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [validationError, setValidationError] = useState("");
     const signupMutation = useSignup();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (localStorage.getItem("access_token")) {
+            navigate({ to: "/" });
+        }
+    }, [navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -30,24 +30,7 @@ class ChatService:
 
     def get_latest_messages(self, thread_id: str, limit: int = 10) -> List[dict]:
         """
-        Retrieve the latest `limit` messages for a given thread_id
-        from the checkpoints table.
+        Retrieve the latest messages for a given thread_id using the agent state.
         """
-        try:
-            query = text("""
-                SELECT checkpoint_id, parent_checkpoint_id, type, checkpoint, metadata
-                FROM checkpoints
-                WHERE thread_id = :thread_id
-                ORDER BY checkpoint_id DESC
-                LIMIT :limit
-            """)
-
-            result = self.db.execute(query, {"thread_id": thread_id, "limit": limit})
-            rows = result.mappings().all()  # returns rows as dict-like objects
-
-            return [dict(row) for row in rows]
-
-        except Exception as e:
-            logger.error(f"Error fetching messages for thread {thread_id}: {e}")
-            raise
+        return self.agent.get_conversation_history(thread_id)
 

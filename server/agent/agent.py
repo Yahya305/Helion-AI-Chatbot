@@ -124,3 +124,31 @@ class Agent:
             logger.debug("Error retrieving conversation history: {}", e)
             return False
 
+    def get_conversation_history(self, thread_id: str) -> list[dict]:
+        """
+        Retrieve conversation history for a thread as a list of dictionaries.
+        """
+        try:
+            state = self.app.get_state(config={"configurable": {"thread_id": thread_id}})
+            
+            if not (state and state.values and "messages" in state.values):
+                return []
+
+            messages = state.values["messages"]
+            result = []
+            
+            for msg in messages:
+                msg_type = "user" if isinstance(msg, HumanMessage) else "assistant" if isinstance(msg, AIMessage) else "tool"
+                result.append({
+                    "id": str(msg.id) if hasattr(msg, "id") and msg.id else None,
+                    "role": msg_type,
+                    "content": msg.content,
+                    "timestamp": None # LangChain messages might not have timestamp by default
+                })
+                
+            return result
+
+        except Exception as e:
+            logger.error(f"Error retrieving conversation history: {e}")
+            return []
+

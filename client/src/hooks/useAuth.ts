@@ -42,7 +42,7 @@ export const useLogout = () => {
 
     return useMutation({
         mutationFn: () => authApi.logout(),
-        onSuccess: () => {
+        onSettled: () => {
             // Navigate to login
             navigate({ to: "/login" });
         },

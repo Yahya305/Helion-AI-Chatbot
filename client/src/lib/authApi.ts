@@ -64,9 +64,12 @@ export const authApi = {
     },
 
     logout: async (): Promise<void> => {
-        await api.post("/auth/logout");
-        // Clear tokens from localStorage
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("token_expires_at");
+        try {
+            await api.post("/auth/logout");
+        } finally {
+            // Clear tokens from localStorage
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("token_expires_at");
+        }
     },
 };

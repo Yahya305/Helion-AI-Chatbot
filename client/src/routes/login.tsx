@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { AuthCard } from "../components/auth/AuthCard";
 import { FormInput } from "../components/auth/FormInput";
 import { useLogin } from "../hooks/useAuth";
@@ -12,6 +12,13 @@ function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const loginMutation = useLogin();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (localStorage.getItem("access_token")) {
+            navigate({ to: "/" });
+        }
+    }, [navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
