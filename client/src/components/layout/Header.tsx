@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useLogout } from "../../hooks/useAuth";
+import { useUser } from "../../hooks/useUser";
 
 export function Header() {
     const logoutMutation = useLogout();
-    const isAuthenticated = !!localStorage.getItem("access_token");
+    const { isAuthenticated } = useUser();
 
     return (
         <header className="border-b border-neutral-800 bg-neutral-900/50 backdrop-blur-sm sticky top-0 z-50">

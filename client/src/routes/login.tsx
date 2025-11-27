@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { AuthCard } from "../components/auth/AuthCard";
 import { FormInput } from "../components/auth/FormInput";
 import { useLogin } from "../hooks/useAuth";
+import { useUser } from "../hooks/useUser";
 
 export const Route = createFileRoute("/login")({
     component: LoginPage,
@@ -13,12 +14,13 @@ function LoginPage() {
     const [password, setPassword] = useState("");
     const loginMutation = useLogin();
     const navigate = useNavigate();
+    const { isAuthenticated, isLoading } = useUser();
 
     useEffect(() => {
-        if (localStorage.getItem("access_token")) {
+        if (!isLoading && isAuthenticated) {
             navigate({ to: "/" });
         }
-    }, [navigate]);
+    }, [isAuthenticated, isLoading, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -43,7 +43,12 @@ def list_user_threads(
     return service.list_user_threads(user_id)
 
 
+
 @chat_router.get("/{thread_id}")
 def get_latest_messages(thread_id: str, service: ChatService = Depends(get_chat_service)):
-    return service.get_latest_messages(thread_id)
+    print(f"Fetching messages for thread_id: {thread_id}")
+    messages = service.get_latest_messages(thread_id)
+    print(f"Found {len(messages) if messages else 0} messages")
+    print(f"Messages: {messages}")
+    return messages
 
