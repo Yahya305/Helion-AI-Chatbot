@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageLayout } from "../components/layout/PageLayout";
 import { Header } from "../components/layout/Header";
+import { IntegrationsSection } from "../components/landing/IntegrationsSection";
+import { FAQSection } from "../components/landing/FAQSection";
+import { Footer } from "../components/landing/Footer";
 
 export const Route = createFileRoute("/")({
     component: HomePage,
@@ -12,10 +15,10 @@ function HomePage() {
             <Header />
 
             {/* Hero Section */}
-            <main className="flex-1 flex items-center justify-center">
-                <div className="container mx-auto px-6 text-center">
+            <main className="flex-1">
+                <div className="container mx-auto px-6 text-center pt-20 pb-20">
                     <h2 className="text-6xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                        Welcome to ChatApp
+                        Welcome to Helion
                     </h2>
                     <p className="text-xl text-neutral-400 mb-12 max-w-2xl mx-auto">
                         Experience the next generation of AI-powered
@@ -56,14 +59,12 @@ function HomePage() {
                         />
                     </div>
                 </div>
+
+                <IntegrationsSection />
+                <FAQSection />
             </main>
 
-            {/* Footer */}
-            <footer className="border-t border-neutral-800 py-6">
-                <div className="container mx-auto px-6 text-center text-neutral-500">
-                    <p>&copy; 2025 ChatApp. All rights reserved.</p>
-                </div>
-            </footer>
+            <Footer />
         </PageLayout>
     );
 }
