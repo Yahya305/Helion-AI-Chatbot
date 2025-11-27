@@ -65,7 +65,6 @@ export const chatApi = {
 
     listThreads: async (): Promise<ChatThread[]> => {
         const response = await api.get("/chat/threads/list");
-        console.log("-=-=-=-=-=-=-=", api.defaults.baseURL);
         return response.data;
     },
 };

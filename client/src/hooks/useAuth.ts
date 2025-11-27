@@ -50,8 +50,10 @@ export const useLogout = () => {
     return useMutation({
         mutationFn: () => authApi.logout(),
         onSettled: () => {
-            // Clear current user from cache
-            queryClient.setQueryData(["currentUser"], null);
+            // Clear ALL queries from cache to prevent stale data
+            // This ensures that when logging out and logging in with a different account,
+            // no cached data from the previous account is shown
+            queryClient.clear();
             // Navigate to login
             navigate({ to: "/login" });
         },

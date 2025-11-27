@@ -78,22 +78,11 @@ def logout(
 @auth_router.get("/me")
 def get_current_user(request: Request):
     """Get the current authenticated user or guest info"""
-
-    # Safely get user from state (returns None if missing)
-    user_info = getattr(request.state, "user", None)
-
-    is_guest = user_info is None
-
-    if is_guest:
-        return {
-            "userId": request.headers.get("X-Guest-Id"),
-            "username": "Guest User",
-            "isGuest": True
-        }
-
+    
+    user_info = request.state.user
     return {
-        "userId": user_info.get("userId"),
-        "username": user_info.get("username"),
-        "email": user_info.get("email"),
-        "isGuest": False
+        "userId": user_info.get('userId'),
+        "username": user_info.get('username'),
+        "email": user_info.get('email'),
+        "isGuest": user_info.get('isGuest', False)
     }

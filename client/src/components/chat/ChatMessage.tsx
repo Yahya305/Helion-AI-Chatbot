@@ -60,7 +60,7 @@ export function ChatMessage({ message, user }: ChatMessageProps) {
                 </div>
             )}
 
-            <div className="flex flex-col max-w-3xl w-full">
+            <div className="flex flex-col max-w-3xl">
                 {thought && <ThoughtBox thought={thought} />}
 
                 {displayContent && (
@@ -78,9 +78,7 @@ export function ChatMessage({ message, user }: ChatMessageProps) {
                 )}
             </div>
 
-            {isUser && (
-                <PlaceholderAvatar user={user} />
-            )}
+            {isUser && <PlaceholderAvatar user={user} />}
         </div>
     );
 }

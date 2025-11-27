@@ -15,7 +15,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or request.url.path in [
             "/api/auth/login",
             "/api/auth/register",
-            "/api/auth/me",
         ]:
             # logger.debug(f"Skipping auth for path: {request.url.path}")
             return await call_next(request)
@@ -27,12 +26,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # If no access token, check for guest ID
         if not access_token:
             # Only allow guest access on /api/chat/* routes
-            if guest_id and request.url.path.startswith("/api/chat"):
+            if guest_id and (request.url.path.startswith("/api/chat") or request.url.path=="/api/auth/me"):
                 print("Guest access allowed")
                 # Allow guest access
                 request.state.user = {
                     "userId": guest_id,
-                    "is_guest": True,
+                    "username": "Guest User",
+                    "email": "",
+                    "isGuest": True,
                 }
                 return await call_next(request)
             else:
@@ -46,7 +47,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             # Normal validation
             user_info = auth_service.verify_access_token(access_token)
             # logger.info(f"Access token valid for user: {user_info.get('userId')}")
-            user_info["is_guest"] = False
+            user_info["isGuest"] = False
             request.state.user = user_info
             return await call_next(request)
 
@@ -84,7 +85,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 "userId": str(refreshed_session.user.id),
                 "username": refreshed_session.user.username,
                 "email": refreshed_session.user.email,
-                "is_guest": False,
+                "isGuest": False,
             }
 
             response = await call_next(request)
