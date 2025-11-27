@@ -19,6 +19,11 @@ export function Footer() {
 
                     <div className="flex gap-6 justify-center mb-8">
                         <SocialIcon
+                            icon={<Github size={24} />}
+                            href="https://github.com/Yahya305"
+                            label="Github"
+                        />
+                        <SocialIcon
                             icon={<Linkedin size={24} />}
                             href="https://www.linkedin.com/in/yahya-salman-37aa29263/"
                             label="LinkedIn"
