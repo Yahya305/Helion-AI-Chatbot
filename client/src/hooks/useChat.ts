@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { chatApi, type ChatThread } from "../lib/chatApi";
+import { chatApi } from "../lib/chatApi";
+import type { ChatThread } from "@/types/chat";
 import { v4 as uuidv4 } from "uuid";
+import { useState, useCallback } from "react";
 
 const THREADS_KEY = "chat_threads";
 
@@ -50,6 +52,57 @@ export const useMessages = (threadId: string) => {
     });
 };
 
+export const useStreamingMessage = (threadId: string) => {
+    const queryClient = useQueryClient();
+    const [streamingContent, setStreamingContent] = useState<string>("");
+    const [isStreaming, setIsStreaming] = useState(false);
+    const { updateThread } = useThreads();
+
+    const sendMessage = useCallback(
+        async (userInput: string) => {
+            if (!threadId) return;
+
+            setIsStreaming(true);
+            setStreamingContent("");
+
+            try {
+                await chatApi.streamMessage(
+                    { user_input: userInput, thread_id: threadId },
+                    (chunk: string) => {
+                        setStreamingContent((prev) => prev + chunk);
+                    },
+                    () => {
+                        setIsStreaming(false);
+                        // Refetch messages to get the complete conversation
+                        queryClient.invalidateQueries({
+                            queryKey: ["messages", threadId],
+                        });
+
+                        // Update thread last message
+                        updateThread(threadId, {
+                            lastMessage:
+                                userInput.substring(0, 50) +
+                                (userInput.length > 50 ? "..." : ""),
+                            timestamp: new Date(),
+                        });
+                    }
+                );
+            } catch (error) {
+                console.error("Streaming error:", error);
+                setIsStreaming(false);
+            }
+        },
+        [threadId, queryClient, updateThread]
+    );
+
+    return {
+        sendMessage,
+        streamingContent,
+        isStreaming,
+    };
+};
+
+// Keep the old hook for backward compatibility if needed
 export const useSendMessage = () => {
     const queryClient = useQueryClient();
     const { updateThread } = useThreads();

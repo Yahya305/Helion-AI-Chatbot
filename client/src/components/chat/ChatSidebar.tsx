@@ -1,4 +1,4 @@
-import type { ChatThread } from "@/lib/chatApi";
+import type { ChatThread } from "@/types/chat";
 
 interface ChatSidebarProps {
     isOpen: boolean;

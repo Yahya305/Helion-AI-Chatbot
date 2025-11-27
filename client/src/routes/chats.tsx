@@ -3,8 +3,8 @@ import { useState, useRef, useEffect } from "react";
 import { ChatSidebar } from "../components/chat/ChatSidebar";
 import { ChatMessage } from "../components/chat/ChatMessage";
 import { ChatInput } from "../components/chat/ChatInput";
-import { useThreads, useMessages, useSendMessage } from "../hooks/useChat";
-import type { ChatThread } from "@/lib/chatApi";
+import { useThreads, useMessages, useStreamingMessage } from "../hooks/useChat";
+import type { ChatMessage as ChatMessageType } from "@/types/chat";
 
 export const Route = createFileRoute("/chats")({
     component: ChatsPage,
@@ -28,7 +28,9 @@ function ChatsPage() {
     const { data: messages = [], isLoading: messagesLoading } = useMessages(
         activeChatId || ""
     );
-    const sendMessageMutation = useSendMessage();
+    const { sendMessage, streamingContent, isStreaming } = useStreamingMessage(
+        activeChatId || ""
+    );
 
     const [input, setInput] = useState("");
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -40,17 +42,16 @@ function ChatsPage() {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, streamingContent]);
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!input.trim() || !activeChatId) return;
 
-        sendMessageMutation.mutate({
-            user_input: input,
-            thread_id: activeChatId,
-        });
-
+        const userMessage = input;
         setInput("");
+
+        // Send the message with streaming
+        await sendMessage(userMessage);
     };
 
     const handleNewChat = () => {
@@ -104,9 +105,38 @@ function ChatsPage() {
                             Loading messages...
                         </div>
                     ) : (
-                        messages.map((msg: ChatThread) => (
+                        messages.map((msg: ChatMessageType) => (
                             <ChatMessage key={msg.id} message={msg} />
                         ))
+                    )}
+                    {isStreaming && streamingContent && (
+                        <div className="flex justify-start">
+                            <div className="bg-neutral-800 rounded-2xl rounded-tl-none px-6 py-4 max-w-[80%]">
+                                <div className="text-neutral-200 whitespace-pre-wrap">
+                                    {streamingContent}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {isStreaming && !streamingContent && (
+                        <div className="flex justify-start">
+                            <div className="bg-neutral-800 rounded-2xl rounded-tl-none px-6 py-4 max-w-[80%]">
+                                <div className="flex gap-1">
+                                    <div
+                                        className="w-2 h-2 bg-neutral-500 rounded-full animate-bounce"
+                                        style={{ animationDelay: "0ms" }}
+                                    />
+                                    <div
+                                        className="w-2 h-2 bg-neutral-500 rounded-full animate-bounce"
+                                        style={{ animationDelay: "150ms" }}
+                                    />
+                                    <div
+                                        className="w-2 h-2 bg-neutral-500 rounded-full animate-bounce"
+                                        style={{ animationDelay: "300ms" }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     )}
                     <div ref={messagesEndRef} />
                 </div>
@@ -115,7 +145,7 @@ function ChatsPage() {
                     value={input}
                     onChange={setInput}
                     onSend={handleSend}
-                    disabled={sendMessageMutation.isPending || !activeChatId}
+                    disabled={isStreaming || !activeChatId}
                 />
             </div>
         </div>
