@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { chatApi } from "../lib/chatApi";
 import type { ChatThread } from "@/types/chat";
 import { v4 as uuidv4 } from "uuid";
@@ -132,30 +132,4 @@ export const useStreamingMessage = (threadId: string) => {
         streamingContent,
         isStreaming,
     };
-};
-
-// Keep the old hook for backward compatibility if needed
-export const useSendMessage = () => {
-    const queryClient = useQueryClient();
-    const { updateThread } = useThreads();
-
-    return useMutation({
-        mutationFn: chatApi.sendMessage,
-        onSuccess: (_data, variables) => {
-            // Invalidate messages query to refetch
-            queryClient.invalidateQueries({
-                queryKey: ["messages", variables.thread_id],
-            });
-            // Refetch threads to update sidebar
-            queryClient.invalidateQueries({ queryKey: ["threads"] });
-
-            // Update thread last message
-            updateThread(variables.thread_id, {
-                lastMessage:
-                    variables.user_input.substring(0, 50) +
-                    (variables.user_input.length > 50 ? "..." : ""),
-                timestamp: new Date(),
-            });
-        },
-    });
 };

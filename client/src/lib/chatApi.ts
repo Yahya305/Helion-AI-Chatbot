@@ -4,11 +4,6 @@ import type { ChatMessage, ChatThread, SendMessageRequest } from "@/types/chat";
 export type { ChatMessage, ChatThread, SendMessageRequest };
 
 export const chatApi = {
-    sendMessage: async (data: SendMessageRequest) => {
-        const response = await api.post("/chat/send", data);
-        return response.data;
-    },
-
     streamMessage: async (
         data: SendMessageRequest,
         onChunk: (chunk: string) => void,
