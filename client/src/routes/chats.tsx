@@ -5,6 +5,7 @@ import { ChatMessage } from "../components/chat/ChatMessage";
 import { ChatInput } from "../components/chat/ChatInput";
 import { useThreads, useMessages, useStreamingMessage } from "../hooks/useChat";
 import type { ChatMessage as ChatMessageType } from "@/types/chat";
+import { useUser } from "@/hooks/useUser";
 
 export const Route = createFileRoute("/chats")({
     component: ChatsPage,
@@ -14,6 +15,7 @@ function ChatsPage() {
     const { threads, createThread } = useThreads();
     console.log("threads", threads);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
+    const { user } = useUser();
 
     // Initialize active chat from server threads
     useEffect(() => {
@@ -116,7 +118,7 @@ function ChatsPage() {
                         </div>
                     ) : (
                         messages.map((msg: ChatMessageType) => (
-                            <ChatMessage key={msg.id} message={msg} />
+                            <ChatMessage key={msg.id} message={msg} user={user} />
                         ))
                     )}
                     {isStreaming && streamingContent && (

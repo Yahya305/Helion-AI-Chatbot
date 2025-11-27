@@ -8,7 +8,7 @@ export function ThoughtBox({ thought }: ThoughtBoxProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <div className="mb-4 rounded-lg border border-neutral-700 bg-neutral-900/50 overflow-hidden">
+        <div className=" rounded-lg border border-neutral-700 bg-neutral-900/50 overflow-hidden">
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full px-4 py-2 flex items-center justify-between text-xs font-medium text-neutral-400 hover:text-neutral-300 hover:bg-neutral-800/50 transition-colors"

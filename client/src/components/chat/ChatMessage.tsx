@@ -1,11 +1,14 @@
+import type { User } from "@/lib/userApi";
 import type { ChatMessage as Message } from "../../types/chat";
+import PlaceholderAvatar from "../ui/PlaceholderAvatar";
 import { ThoughtBox } from "./ThoughtBox";
 
 interface ChatMessageProps {
     message: Message;
+    user?: User | null;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, user }: ChatMessageProps) {
     const isUser = message.role === "user";
 
     // Hide "Retrieved memories" messages completely
@@ -64,7 +67,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
                     <div
                         className={`rounded-2xl px-6 py-4 ${
                             isUser
-                                ? "bg-blue-600 text-white"
+                                ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
                                 : "bg-neutral-800 border border-neutral-700"
                         }`}
                     >
@@ -76,9 +79,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
             </div>
 
             {isUser && (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold">U</span>
-                </div>
+                <PlaceholderAvatar user={user} />
             )}
         </div>
     );

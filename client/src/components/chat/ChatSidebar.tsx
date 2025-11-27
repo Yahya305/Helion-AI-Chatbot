@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useUser } from "../../hooks/useUser";
 import { useLogout } from "../../hooks/useAuth";
+import PlaceholderAvatar from "../ui/PlaceholderAvatar";
 
 interface ChatSidebarProps {
     isOpen: boolean;
@@ -100,11 +101,7 @@ export function ChatSidebar({
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                     className="w-full flex items-center gap-3 hover:bg-neutral-800/50 rounded-lg p-2 transition-colors"
                 >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center font-semibold flex-shrink-0">
-                        {isAuthenticated && user?.username
-                            ? user.username.charAt(0).toUpperCase()
-                            : "G"}
-                    </div>
+                    <PlaceholderAvatar user={user} />
                     <div className="flex-1 min-w-0 text-left">
                         <div className="text-sm font-medium truncate">
                             {isAuthenticated && user?.username
