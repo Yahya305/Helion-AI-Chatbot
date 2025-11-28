@@ -1,9 +1,11 @@
 import axios from "axios";
 import { getGuestId } from "./guest";
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
 // Create axios instance with base URL
 export const api = axios.create({
-    baseURL: "/api", // Vite proxy handles forwarding to backend
+    baseURL: apiUrl ? `${apiUrl}/api` : "/api", // Append /api if URL is provided, else use relative path
     withCredentials: true, // Important for cookies
 });
 
