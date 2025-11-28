@@ -8,6 +8,7 @@ from langgraph.graph import StateGraph, START, END
 from .state import AgentState
 from .nodes import agent_node, agent_node_with_streaming, tool_node, decide_next_step
 from psycopg import Connection
+from psycopg.rows import dict_row
 from langgraph.checkpoint.postgres import PostgresSaver
 
 def create_agent_workflow():
@@ -52,8 +53,21 @@ def create_agent_workflow():
     # Tool node always goes back to agent
     workflow.add_edge("tool_node", "agent")
     
-    # Create the checkpointer with the passed connection
-    checkpointer = PostgresSaver(get_psycopg_db_connection())
+    # Create the checkpointer with a connection pool
+    # This ensures we always get a fresh connection and avoid "connection closed" errors
+    from psycopg_pool import ConnectionPool
+    from core import constants
+    
+    pool = ConnectionPool(
+        conninfo=constants.POSTGRES_CONNECTION_URI,
+        max_size=20,
+        kwargs={
+            "autocommit": True,
+            "prepare_threshold": 0,
+            "row_factory": dict_row
+        }
+    )
+    checkpointer = PostgresSaver(pool)
     
     # Setup the database tables
     try:
