@@ -23,6 +23,13 @@ export function ChatMessage({ message, user }: ChatMessageProps) {
     ) {
         return null;
     }
+    // Hide tool messages that start with "Saved Semantic Info"
+    if (
+        message.role === "tool" &&
+        message.content.startsWith("Saved Semantic Info")
+    ) {
+        return null;
+    }
 
     // Parse thought process if present
     // Looking for pattern: Thought: ... [Action: ... Action Input: ...]
