@@ -41,6 +41,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "ok", "timestamp": time.time()}
+
 # Add middleware
 app.add_middleware(
     TrustedHostMiddleware,

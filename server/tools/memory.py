@@ -4,12 +4,13 @@ from langchain.tools import BaseTool
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from core.database import get_psycopg_db_connection
 from utils.logger import logger
 from langgraph.runtime import get_runtime
 from dataclasses import dataclass
 import json
+from core.constants import GOOGLE_API_KEY
 
 class StoreMemoryInput(BaseModel):
     """Input schema for storing memory"""
@@ -39,9 +40,12 @@ class SemanticMemoryTools:
             db_connection: PostgreSQL connection with pgvector
         """
         
-        # Load embedding model (384 dimensions, high quality)
-        logger.debug("All-MiniLM-L6-v2 embedding model...")
-        self.embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", trust_remote_code=True)
+        # Load embedding model (Google Generative AI)
+        logger.debug("Initializing Google Generative AI Embeddings...")
+        self.embedding_model = GoogleGenerativeAIEmbeddings(
+            model="models/text-embedding-004",
+            google_api_key=GOOGLE_API_KEY
+        )
         logger.debug("embedding model loaded successfully!")
         
         
@@ -54,17 +58,23 @@ class SemanticMemoryTools:
             is_query: If True, adds search_query prefix; else search_document prefix
         """
         try:
-            # Add embedding-specific prefixes for better performance
-            if is_query:
-                text = f"search_query: {text}"
-            else:
-                text = f"search_document: {text}"
+            # Google Embeddings handles task type internally or via config, 
+            # but for simple usage we can just embed the text.
+            # text-embedding-004 is optimized for retrieval.
             
-            embedding = self.embedding_model.encode(text, convert_to_numpy=True)
-            return embedding.tolist()
+            embedding = self.embedding_model.embed_query(text)
+            return embedding
         except Exception as e:
             logger.debug(f"Error getting embedding: {e}")
-            return [0.0] * 384  # Nomic is 384 dimensions
+            # Return zero vector of correct dimension (768 for text-embedding-004)
+            # Note: Check if your DB vector size matches this! 
+            # If DB is 384 (MiniLM), we might have a dimension mismatch.
+            # We should probably stick to a model that fits or migrate DB.
+            # text-embedding-004 is 768 dim. 
+            # MiniLM is 384.
+            # If we change model, we MUST recreate the table or migrate data.
+            # For now, let's assume we can drop/recreate table since it's dev/deployment phase.
+            return [0.0] * 768
         
     def _validate_store_memory_input(self, input_data: str) -> tuple[dict, str]:
         """

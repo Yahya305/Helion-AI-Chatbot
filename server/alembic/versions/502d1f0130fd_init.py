@@ -37,7 +37,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.UUID(), nullable=False),
     sa.Column('content', sa.String(), nullable=False),
     sa.Column('importance', sa.String(), nullable=True),
-    sa.Column('embedding', Vector(dim=384), nullable=True),
+    sa.Column('embedding', Vector(dim=768), nullable=True),
     sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')

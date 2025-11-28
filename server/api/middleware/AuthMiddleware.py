@@ -15,6 +15,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or request.url.path in [
             "/api/auth/login",
             "/api/auth/register",
+            "/health",
         ]:
             # logger.debug(f"Skipping auth for path: {request.url.path}")
             return await call_next(request)

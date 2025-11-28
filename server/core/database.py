@@ -90,7 +90,7 @@ def initialize_database() -> None:
                     user_id TEXT NOT NULL,
                     content TEXT NOT NULL,
                     importance TEXT DEFAULT 'medium',
-                    embedding vector(384),
+                    embedding vector(768),
                     created_at TIMESTAMP DEFAULT NOW()
                 );
             """)
