@@ -25,6 +25,21 @@ class Logger:
             message = message.format(*args, **kwargs)
         print(message, end=end, flush=flush)
 
+    def error(self, message: str, *args, end: str = '\n', flush: bool = False, **kwargs) -> None:
+        """
+        Log error message - always displayed.
+        
+        Args:
+            message: The message to log
+            *args: Format string arguments
+            end: String appended after the message (default: '\n')
+            flush: Whether to forcibly flush the stream (default: False)
+            **kwargs: Format string keyword arguments
+        """
+        if args or kwargs:
+            message = message.format(*args, **kwargs)
+        print(f"ERROR: {message}", end=end, flush=flush)
+
     def debug(self, message: str, *args, end: str = '\n', flush: bool = False, **kwargs) -> None:
         """
         Log debug message - only displayed if debug mode is enabled.
