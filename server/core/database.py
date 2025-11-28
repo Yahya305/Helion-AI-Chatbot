@@ -84,24 +84,6 @@ def initialize_database() -> None:
             cursor.execute("SELECT 1;")
             cursor.execute("CREATE EXTENSION IF NOT EXISTS vector;")
 
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS semantic_memories (
-                    id SERIAL PRIMARY KEY,
-                    user_id TEXT NOT NULL,
-                    content TEXT NOT NULL,
-                    importance TEXT DEFAULT 'medium',
-                    embedding vector(768),
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-            """)
-
-            cursor.execute("""
-                CREATE INDEX IF NOT EXISTS idx_semantic_memories_embedding
-                ON semantic_memories
-                USING ivfflat (embedding vector_cosine_ops)
-                WITH (lists = 100);
-            """)
-
         init_conn.close()
         logger.info(f"PostgreSQL initialized successfully at: {db_uri}")
 
