@@ -10,6 +10,36 @@ from psycopg.rows import dict_row
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import SQLAlchemyError
+from . import constants
+
+
+logger = logging.getLogger(__name__)
+
+engine = create_engine(
+    constants.POSTGRES_URI,
+    pool_size=10,
+    max_overflow=20,
+    pool_pre_ping=True,
+    pool_recycle=300,  # Recycle connections every 5 minutes (matches Neon's timeout)
+    pool_use_lifo=True,  # Use LIFO to reuse hot connections
+    echo=True,  # set to False in production if noisy
+    future=True,
+    connect_args={
+        "options": "-c timezone=utc",
+        "application_name": "Helion",
+        "connect_timeout": 10,
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    },
+)
+
+# Session factory
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
     bind=engine,
     expire_on_commit=False,
 )
