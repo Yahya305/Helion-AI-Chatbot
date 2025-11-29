@@ -10,31 +10,6 @@ from psycopg.rows import dict_row
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.exc import SQLAlchemyError
-from . import constants
-
-
-logger = logging.getLogger(__name__)
-
-engine = create_engine(
-    constants.POSTGRES_URI,
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,
-    pool_recycle=3600,
-    echo=True,  # set to False in production if noisy
-    future=True,
-    connect_args={
-        "options": "-c timezone=utc",
-        "application_name": "Helion",
-        "connect_timeout": 10,
-    },
-)
-
-# Session factory
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
     bind=engine,
     expire_on_commit=False,
 )
