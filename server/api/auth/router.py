@@ -71,7 +71,12 @@ def logout(
             service.invalidate_user_sessions(user_id)
     
     # Clear the access_token cookie
-    response.delete_cookie("access_token")
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        samesite="none",
+        secure=True
+    )
     return {"message": "Logged out successfully"}
 
 
